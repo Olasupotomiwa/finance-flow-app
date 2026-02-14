@@ -57,23 +57,26 @@ export default function EmailSent() {
       }),
     ]).start();
 
-   const bounce = Animated.loop(
-     Animated.sequence([
-       Animated.timing(emailBounce, {
-         toValue: -10,
-         duration: 1000,
-         useNativeDriver: true,
-       }),
-       Animated.timing(emailBounce, {
-         toValue: 0,
-         duration: 1000,
-         useNativeDriver: true,
-       }),
-     ]),
-   );
-   return () => {
-     bounce.stop();
-   };
+    const bounce = Animated.loop(
+      Animated.sequence([
+        Animated.timing(emailBounce, {
+          toValue: -10,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(emailBounce, {
+          toValue: 0,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+
+    bounce.start();
+
+    return () => {
+      bounce.stop();
+    };
   }, []);
 
   const rotate = checkmarkRotate.interpolate({
@@ -103,7 +106,8 @@ export default function EmailSent() {
         <Animated.View
           style={{
             transform: [{ scale: emailScale }, { translateY: emailBounce }],
-            backgroundColor: `${colors.primary}20`,
+            backgroundColor: colors.primary,
+            opacity: 0.2,
           }}
           className="p-6 rounded-full mb-6"
         >
@@ -111,7 +115,10 @@ export default function EmailSent() {
         </Animated.View>
 
         {/* Animated Text Content */}
-        <Animated.View style={{ opacity: fadeAnim }} className="items-center">
+        <Animated.View
+          style={{ opacity: fadeAnim }}
+          className="items-center w-full"
+        >
           <Text
             className="text-3xl font-bold mb-3 text-center"
             style={{ color: colors.text }}
@@ -138,12 +145,14 @@ export default function EmailSent() {
               >
                 <Text className="text-white font-bold text-xs">1</Text>
               </View>
-              <Text
-                className="text-sm flex-1"
-                style={{ color: colors.textSecondary }}
-              >
-                Check your inbox for the confirmation email
-              </Text>
+              <View style={{ flex: 1 }}>
+                <Text
+                  className="text-sm"
+                  style={{ color: colors.textSecondary }}
+                >
+                  Check your inbox for the confirmation email
+                </Text>
+              </View>
             </View>
 
             <View className="flex-row items-start mb-3">
@@ -153,12 +162,14 @@ export default function EmailSent() {
               >
                 <Text className="text-white font-bold text-xs">2</Text>
               </View>
-              <Text
-                className="text-sm flex-1"
-                style={{ color: colors.textSecondary }}
-              >
-                Click the confirmation link in the email
-              </Text>
+              <View style={{ flex: 1 }}>
+                <Text
+                  className="text-sm"
+                  style={{ color: colors.textSecondary }}
+                >
+                  Click the confirmation link in the email
+                </Text>
+              </View>
             </View>
 
             <View className="flex-row items-start">
@@ -168,20 +179,25 @@ export default function EmailSent() {
               >
                 <Text className="text-white font-bold text-xs">3</Text>
               </View>
-              <Text
-                className="text-sm flex-1"
-                style={{ color: colors.textSecondary }}
-              >
-                The app will open and you'll be automatically logged in
-              </Text>
+              <View style={{ flex: 1 }}>
+                <Text
+                  className="text-sm"
+                  style={{ color: colors.textSecondary }}
+                >
+                  The app will open and you'll be automatically logged in
+                </Text>
+              </View>
             </View>
           </View>
 
+          {/* Info Box */}
           <View
-            className="p-4 rounded-2xl border mb-8 w-full"
+            className="p-4 rounded-2xl mb-8 w-full"
             style={{
-              backgroundColor: `${colors.primary}10`,
-              borderColor: `${colors.primary}30`,
+              backgroundColor: colors.primary,
+              opacity: 0.1,
+              borderWidth: 1,
+              borderColor: colors.primary,
             }}
           >
             <View className="flex-row items-center">
@@ -190,12 +206,11 @@ export default function EmailSent() {
                 size={24}
                 color={colors.primary}
               />
-              <Text
-                className="text-sm ml-2 flex-1"
-                style={{ color: colors.primary }}
-              >
-                Don't forget to check your spam folder
-              </Text>
+              <View style={{ flex: 1, marginLeft: 8 }}>
+                <Text className="text-sm" style={{ color: colors.primary }}>
+                  Don't forget to check your spam folder
+                </Text>
+              </View>
             </View>
           </View>
 
@@ -213,8 +228,8 @@ export default function EmailSent() {
 
           <TouchableOpacity
             onPress={() => router.replace("/")}
-            className="px-8 py-4 rounded-2xl w-full border"
-            style={{ borderColor: colors.border }}
+            className="px-8 py-4 rounded-2xl w-full"
+            style={{ borderWidth: 1, borderColor: colors.border }}
             activeOpacity={0.8}
           >
             <Text
@@ -230,15 +245,15 @@ export default function EmailSent() {
       {/* Decorative Elements */}
       <View
         className="absolute top-20 left-10 w-20 h-20 rounded-full"
-        style={{ backgroundColor: `${colors.primary}10` }}
+        style={{ backgroundColor: colors.primary, opacity: 0.1 }}
       />
       <View
         className="absolute bottom-32 right-8 w-16 h-16 rounded-full"
-        style={{ backgroundColor: `${colors.success}10` }}
+        style={{ backgroundColor: colors.success, opacity: 0.1 }}
       />
       <View
         className="absolute top-1/3 right-12 w-12 h-12 rounded-full"
-        style={{ backgroundColor: `${colors.primary}15` }}
+        style={{ backgroundColor: colors.primary, opacity: 0.15 }}
       />
     </SafeAreaView>
   );

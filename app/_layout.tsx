@@ -11,7 +11,6 @@ import * as Linking from "expo-linking";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ThemeProvider } from "@/context/ThemeContext";
 
-
 export default function RootLayout() {
   const router = useRouter();
   const [authEvent, setAuthEvent] = useState<string>("INITIAL_LOAD");
@@ -22,134 +21,187 @@ export default function RootLayout() {
     appFontBold: require("../assets/font/BarlowSemiCondensed-Bold.ttf"),
   });
 
+  // Utility function for delays
+  const delay = (ms: number) =>
+    new Promise((resolve) => setTimeout(resolve, ms));
+
   // Handle deep links from email confirmation and password reset
- useEffect(() => {
-   const handleUrl = async (url: string) => {
-     console.log("=== DEEP LINK RECEIVED ===");
-     console.log("URL:", url);
+  useEffect(() => {
+    const handleUrl = async (url: string) => {
+      try {
+        setAuthEvent("DEEP_LINK_RECEIVED");
 
-     setAuthEvent("DEEP_LINK_RECEIVED");
+        // Small delay to ensure app is fully initialized
+        await delay(150);
 
-     const parsedUrl = Linking.parse(url);
-     const queryParams = parsedUrl.queryParams;
+        const parsedUrl = Linking.parse(url);
+        const queryParams = parsedUrl.queryParams;
 
-     console.log("Query Params:", queryParams);
+        // Check if this is a password recovery link (query params)
+        if (queryParams?.type === "recovery") {
+          setAuthEvent("PASSWORD_RECOVERY");
 
-     // Check if this is a password recovery link (query params)
-     if (queryParams?.type === "recovery") {
-       console.log("✅ Password recovery link detected (query params)");
-       setAuthEvent("PASSWORD_RECOVERY");
+          setTimeout(() => {
+            router.replace("/auth/reset-password");
+          }, 100);
+          return;
+        }
 
-       // Navigate to reset password page
-       setTimeout(() => {
-         router.replace("/auth/reset-password");
-       }, 100);
-       return;
-     }
+        // Check if URL contains tokens in fragment
+        if (url.includes("#")) {
+          const [, fragment] = url.split("#");
 
-     // Check if URL contains tokens in fragment
-     if (url.includes("#")) {
-       const [, fragment] = url.split("#");
-       console.log("Fragment:", fragment);
+          if (fragment) {
+            const params = new URLSearchParams(fragment);
+            const accessToken = params.get("access_token");
+            const refreshToken = params.get("refresh_token");
+            const type = params.get("type");
+            const error = params.get("error");
+            const errorDescription = params.get("error_description");
 
-       if (fragment) {
-         const params = new URLSearchParams(fragment);
-         const accessToken = params.get("access_token");
-         const refreshToken = params.get("refresh_token");
-         const type = params.get("type");
+            // Check for errors in the URL from Supabase
+            if (error) {
+              setAuthEvent(`ERROR: ${error}`);
+              Toast.show({
+                type: "error",
+                text1: "Verification Failed",
+                text2: errorDescription || error,
+                position: "bottom",
+              });
+              return;
+            }
 
-         // If type is recovery in fragment, set session with tokens then navigate
-         if (type === "recovery" && accessToken && refreshToken) {
-         
-           setAuthEvent("PASSWORD_RECOVERY");
+            // If type is recovery in fragment, store tokens and navigate
+            if (type === "recovery" && accessToken && refreshToken) {
+              setAuthEvent("PASSWORD_RECOVERY");
 
-           // Store tokens temporarily - DO NOT call setSession
-           await AsyncStorage.setItem("recovery_access_token", accessToken);
-           await AsyncStorage.setItem("recovery_refresh_token", refreshToken);
+              await AsyncStorage.setItem("recovery_access_token", accessToken);
+              await AsyncStorage.setItem(
+                "recovery_refresh_token",
+                refreshToken,
+              );
 
-           setTimeout(() => {
-             router.replace("/auth/reset-password");
-           }, 100);
-           return;
-         }
+              setTimeout(() => {
+                router.replace("/auth/reset-password");
+              }, 100);
+              return;
+            }
 
-         // If type is signup or no type specified, set session (email confirmation)
-         if (accessToken && refreshToken && type !== "recovery") {
-          
-           setAuthEvent("SETTING_SESSION");
+            // If type is signup or no type specified, set session (email confirmation)
+            if (accessToken && refreshToken && type !== "recovery") {
+              setAuthEvent("SETTING_SESSION");
 
-           const { data, error } = await supabase.auth.setSession({
-             access_token: accessToken,
-             refresh_token: refreshToken,
-           });
+              try {
+                // Delay before setting session to ensure Supabase client is ready
+                await delay(200);
 
-         
+                const { data, error } = await supabase.auth.setSession({
+                  access_token: accessToken,
+                  refresh_token: refreshToken,
+                });
 
-           if (error) {
-             setAuthEvent(`ERROR: ${error.message}`);
-             Toast.show({
-               type: "error",
-               text1: "Verification Failed",
-               text2: error.message,
-               position: "top",
-             });
-           } else if (data.session) {
-             setAuthEvent("SESSION_SET_SUCCESS");
+                if (error) throw error;
 
-             // Show email verified toast immediately when session is set
-             Toast.show({
-               type: "success",
-               text1: " Email Verified!",
-               text2: "Your email has been successfully confirmed 🎉",
-               position: "top",
-             });
+                if (data.session) {
+                  setAuthEvent("SESSION_SET_SUCCESS");
 
-             // Navigate to dashboard after short delay
-             setTimeout(() => {
-               router.replace("/(tabs)/home");
-             }, 1500);
-           }
-         }
-       }
-     }
-   };
+                  // Show email verified toast
+                  Toast.show({
+                    type: "success",
+                    text1: "Email Verified!",
+                    text2: "Your email has been successfully confirmed 🎉",
+                    position: "bottom",
+                  });
 
-   // Listen for deep links
-   const subscription = Linking.addEventListener("url", (event) => {
-     console.log("URL Event Listener Triggered");
-     handleUrl(event.url);
-   });
+                  // Navigate to dashboard after delay
+                  setTimeout(() => {
+                    router.replace("/(tabs)/home");
+                  }, 1500);
+                } else {
+                  throw new Error("Session was not created");
+                }
+              } catch (sessionError: any) {
+                setAuthEvent(`ERROR: ${sessionError.message}`);
 
-   // Check initial URL
-   Linking.getInitialURL().then((url) => {
-     if (url) {
-       console.log("Initial URL Found:", url);
-       handleUrl(url);
-     } else {
-       console.log("No Initial URL");
-     }
-   });
+                let errorMessage = "Failed to verify email. Please try again.";
 
-   return () => {
-     subscription.remove();
-   };
- }, []);
+                if (sessionError.message?.includes("Network request failed")) {
+                  errorMessage =
+                    "Network error. Please check your internet connection and try again.";
+                } else if (sessionError.message?.includes("Invalid")) {
+                  errorMessage =
+                    "Invalid or expired confirmation link. Please request a new one.";
+                } else if (sessionError.message) {
+                  errorMessage = sessionError.message;
+                }
+
+                Toast.show({
+                  type: "error",
+                  text1: "Verification Failed",
+                  text2: errorMessage,
+                  position: "bottom",
+                });
+
+                setTimeout(() => {
+                  router.replace("/auth/signin");
+                }, 2000);
+              }
+            }
+          }
+        }
+      } catch (error: any) {
+        Toast.show({
+          type: "error",
+          text1: "Link Processing Failed",
+          text2: error.message || "Failed to process confirmation link",
+          position: "bottom",
+        });
+      }
+    };
+
+    const setupListeners = async () => {
+      // Small delay to ensure app is fully initialized
+      await delay(100);
+
+      // Listen for deep links
+      const subscription = Linking.addEventListener("url", (event) => {
+        handleUrl(event.url);
+      });
+
+      // Check initial URL
+      const initialUrl = await Linking.getInitialURL();
+      if (initialUrl) {
+        // Add delay before handling initial URL
+        await delay(250);
+        handleUrl(initialUrl);
+      }
+
+      return subscription;
+    };
+
+    let subscription: any;
+
+    setupListeners().then((sub) => {
+      subscription = sub;
+    });
+
+    return () => {
+      if (subscription) {
+        subscription.remove();
+      }
+    };
+  }, []);
 
   // Handle auth state changes
   useEffect(() => {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      // Update state to show on screen
       setAuthEvent(event);
       setHasSession(!!session);
 
-      console.log("🔄 Auth event:", event);
-
       // Handle password recovery event - don't auto-redirect
       if (event === "PASSWORD_RECOVERY") {
-        console.log("🔑 Password recovery event detected");
-        // Don't show toast or redirect - let the reset password page handle it
         return;
       }
 
@@ -158,7 +210,7 @@ export default function RootLayout() {
           type: "success",
           text1: "Welcome!",
           text2: "You have logged in successfully 👋",
-          position: "top",
+          position: "bottom",
         });
         router.replace("/(tabs)/home");
       }
@@ -185,7 +237,7 @@ export default function RootLayout() {
             <Stack
               screenOptions={{
                 headerShown: false,
-                gestureEnabled: false, 
+                gestureEnabled: false,
               }}
             />
             <Toast />

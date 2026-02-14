@@ -29,18 +29,11 @@ export default function ResetPassword() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const { setIsResettingPassword } = useAuth();
+ 
   const router = useRouter();
 
-  // 🔥 Set the flag when this component mounts
-  useEffect(() => {
-    setIsResettingPassword(true);
-
-    // Clean up when component unmounts
-    return () => {
-      setIsResettingPassword(false);
-    };
-  }, []);
+ 
+ 
 
   // Password validation
   const checkPasswordStrength = (pwd: string): PasswordStrength => {
