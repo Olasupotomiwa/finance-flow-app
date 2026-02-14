@@ -32,10 +32,16 @@ yarn-error.*
 
 # local env files
 .env*.local
-.env              # ADD THIS LINE
-.env.local        # ADD THIS LINE
-.env.development  # ADD THIS LINE
-.env.production   # ADD THIS LINE
+.env              
+.env.local       
+.env.development  
+.env.production  
+
+
+# Environment variables
+.env
+.env*
+!.env.example
 
 # typescript
 *.tsbuildinfo
