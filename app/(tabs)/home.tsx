@@ -105,10 +105,7 @@ export default function Dashboard() {
     initialLoad();
   }, []);
 
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    router.replace("/");
-  };
+ 
 
   if (loading) {
     return (
@@ -352,22 +349,7 @@ export default function Dashboard() {
           </TouchableOpacity>
         </View>
 
-        {/* Sign Out Button */}
-        <View className="px-6 pb-6">
-          <TouchableOpacity
-            onPress={handleSignOut}
-            className="border rounded-2xl p-4"
-            style={{ borderColor: colors.error }}
-            activeOpacity={0.8}
-          >
-            <Text
-              className="text-center font-bold text-base"
-              style={{ color: colors.error }}
-            >
-              Sign Out
-            </Text>
-          </TouchableOpacity>
-        </View>
+       
       </ScrollView>
     </SafeAreaView>
   );
