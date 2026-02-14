@@ -57,21 +57,23 @@ export default function EmailSent() {
       }),
     ]).start();
 
-    // Continuous bounce for email icon
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(emailBounce, {
-          toValue: -10,
-          duration: 1000,
-          useNativeDriver: true,
-        }),
-        Animated.timing(emailBounce, {
-          toValue: 0,
-          duration: 1000,
-          useNativeDriver: true,
-        }),
-      ]),
-    ).start();
+   const bounce = Animated.loop(
+     Animated.sequence([
+       Animated.timing(emailBounce, {
+         toValue: -10,
+         duration: 1000,
+         useNativeDriver: true,
+       }),
+       Animated.timing(emailBounce, {
+         toValue: 0,
+         duration: 1000,
+         useNativeDriver: true,
+       }),
+     ]),
+   );
+   return () => {
+     bounce.stop();
+   };
   }, []);
 
   const rotate = checkmarkRotate.interpolate({

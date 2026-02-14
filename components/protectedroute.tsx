@@ -17,8 +17,8 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
     if (!user && !inAuthGroup) {
       // Only redirect if not already on the landing page
-      if (currentPath !== "") {
-        router.replace("/");
+      if (currentPath !== "/") {
+        router.replace("/auth/signin");
       }
     } else if (user && inAuthGroup) {
       // 🔥 Don't redirect to home if on reset password page

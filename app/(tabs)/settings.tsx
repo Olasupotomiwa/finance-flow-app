@@ -12,10 +12,17 @@ import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 import ThemeSelector from "@/components/ThemeSelector";
 import { useTheme } from "@/context/ThemeContext";
+import { supabase } from "@/lib/supabse";
+import { useRouter } from "expo-router";
 
 export default function SettingsScreen() {
   const [notifications, setNotifications] = useState(true);
   const { colors, effectiveTheme } = useTheme();
+ const router = useRouter();
+   const handleSignOut = async () => {
+     await supabase.auth.signOut();
+     router.replace("/auth/signin");
+   };
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
@@ -43,9 +50,7 @@ export default function SettingsScreen() {
             Appearance
           </Text>
 
-        
-            <ThemeSelector />
-          
+          <ThemeSelector />
         </View>
 
         {/* General Settings */}
@@ -144,16 +149,22 @@ export default function SettingsScreen() {
           </View>
         </View>
 
-        {/* Logout */}
-        <TouchableOpacity
-          className="rounded-2xl py-4 mt-4 mb-8"
-          style={{ backgroundColor: colors.error }}
-          activeOpacity={0.8}
-        >
-          <Text className="text-white font-appFontBold text-center text-lg">
-            Logout
-          </Text>
-        </TouchableOpacity>
+        {/* Sign Out Button */}
+        <View className="px-6 pb-6">
+          <TouchableOpacity
+            onPress={handleSignOut}
+            className="border rounded-2xl p-4"
+            style={{ borderColor: colors.error }}
+            activeOpacity={0.8}
+          >
+            <Text
+              className="text-center font-bold text-base"
+              style={{ color: colors.error }}
+            >
+              Sign Out
+            </Text>
+          </TouchableOpacity>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );

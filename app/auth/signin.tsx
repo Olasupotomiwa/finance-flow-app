@@ -171,7 +171,7 @@ export default function SignIn() {
                 Welcome Back
               </Text>
               <Text
-                className="text-base font-appFont"
+                className="text-md font-appFont"
                 style={{ color: colors.textSecondary }}
               >
                 Sign in to Finance Flow
@@ -196,13 +196,13 @@ export default function SignIn() {
                   />
                   <View className="flex-1">
                     <Text
-                      className="text-base font-appFontBold mb-1"
+                      className="text-md font-appFontBold mb-1"
                       style={{ color: colors.errorLight }}
                     >
                       Sign In Failed
                     </Text>
                     <Text
-                      className="text-sm font-appFont"
+                      className="text-md font-appFont"
                       style={{ color: colors.error }}
                     >
                       {errorMsg}
@@ -215,7 +215,7 @@ export default function SignIn() {
             {/* Email Input */}
             <View className="mb-5">
               <Text
-                className="text-sm font-appFontBold mb-2 ml-1"
+                className="text-md font-appFontBold mb-2 ml-1"
                 style={{ color: colors.text }}
               >
                 Email Address
@@ -239,7 +239,7 @@ export default function SignIn() {
                 <TextInput
                   placeholder="your.email@example.com"
                   placeholderTextColor={colors.placeholder}
-                  className="flex-1 text-base p-4 font-appFont"
+                  className="flex-1 text-md p-4 font-appFont"
                   style={{ color: colors.text }}
                   value={email}
                   onChangeText={(text) => {
@@ -266,7 +266,7 @@ export default function SignIn() {
               </View>
               {emailError && (
                 <Text
-                  className="text-sm mt-2 ml-1 font-appFont"
+                  className="text-md mt-2 ml-1 font-appFont"
                   style={{ color: colors.error }}
                 >
                   {emailError}
@@ -277,7 +277,7 @@ export default function SignIn() {
             {/* Password Input */}
             <View className="mb-2">
               <Text
-                className="text-sm font-appFontBold mb-2 ml-1"
+                className="text-md font-appFontBold mb-2 ml-1"
                 style={{ color: colors.text }}
               >
                 Password
@@ -302,7 +302,7 @@ export default function SignIn() {
                   placeholder="Enter your password"
                   placeholderTextColor={colors.placeholder}
                   secureTextEntry={!showPassword}
-                  className="flex-1 text-base p-4 font-appFont"
+                  className="flex-1 text-md p-4 font-appFont"
                   style={{ color: colors.text }}
                   value={password}
                   onChangeText={(text) => {
@@ -331,7 +331,7 @@ export default function SignIn() {
               </View>
               {passwordError && (
                 <Text
-                  className="text-sm mt-2 ml-1 font-appFont"
+                  className="text-md mt-2 ml-1 font-appFont"
                   style={{ color: colors.error }}
                 >
                   {passwordError}
@@ -346,7 +346,7 @@ export default function SignIn() {
               activeOpacity={0.7}
             >
               <Text
-                className="text-sm font-appFontBold"
+                className="text-md font-appFontBold"
                 style={{ color: colors.primary }}
               >
                 Forgot Password?
@@ -387,7 +387,7 @@ export default function SignIn() {
                 style={{ backgroundColor: colors.border }}
               />
               <Text
-                className="mx-4 text-sm font-appFontBold"
+                className="mx-4 text-md font-appFontBold"
                 style={{ color: colors.textTertiary }}
               >
                 OR
@@ -409,7 +409,7 @@ export default function SignIn() {
             >
               <Ionicons name="logo-google" size={24} color="#EA4335" />
               <Text
-                className="font-appFontBold text-base ml-3"
+                className="font-appFontBold text-md ml-3"
                 style={{ color: colors.text }}
               >
                 Continue with Google
@@ -419,7 +419,7 @@ export default function SignIn() {
             {/* Sign Up Link */}
             <View className="flex-row justify-center items-center">
               <Text
-                className="text-base font-appFont"
+                className="text-md font-appFont"
                 style={{ color: colors.textSecondary }}
               >
                 Don't have an account?{" "}
@@ -429,7 +429,7 @@ export default function SignIn() {
                 activeOpacity={0.7}
               >
                 <Text
-                  className="font-appFontBold text-base"
+                  className="font-appFontBold text-md"
                   style={{ color: colors.primary }}
                 >
                   Sign Up
@@ -461,7 +461,7 @@ export default function SignIn() {
               Finance Flow
             </Text>
             <Text
-              className="font-appFont text-sm mt-2"
+              className="font-appFont text-md mt-2"
               style={{ color: colors.textSecondary }}
             >
               Signing you in...
