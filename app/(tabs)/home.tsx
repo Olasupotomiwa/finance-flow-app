@@ -4,14 +4,16 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   ScrollView,
-  Image,
-  RefreshControl, // Add this import
+  RefreshControl,
+  StatusBar,
 } from "react-native";
 import { supabase } from "../../lib/supabse";
 import { useEffect, useState } from "react";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import { useTheme } from "@/context/ThemeContext";
+import AppHeader from "@/components/Home/header";
 
 interface UserProfile {
   first_name: string | null;
@@ -32,17 +34,10 @@ export default function Dashboard() {
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false); // Add this state
+  const [refreshing, setRefreshing] = useState(false);
   const [profileCompletion, setProfileCompletion] = useState(0);
   const router = useRouter();
-
-  // Get time of day greeting
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return "Good Morning";
-    if (hour < 17) return "Good Afternoon";
-    return "Good Evening";
-  };
+  const { colors, effectiveTheme } = useTheme();
 
   // Calculate profile completion percentage
   const calculateProfileCompletion = (profile: UserProfile | null) => {
@@ -71,7 +66,6 @@ export default function Dashboard() {
   // Load data function (extracted for reuse)
   const loadData = async () => {
     try {
-      // 1. Get Auth User
       const {
         data: { user },
       } = await supabase.auth.getUser();
@@ -79,7 +73,6 @@ export default function Dashboard() {
       if (user) {
         setUserEmail(user.email ?? "User");
 
-        // 2. Fetch Full Profile from public.users table
         const { data: profileData } = await supabase
           .from("users")
           .select("*")
@@ -119,71 +112,46 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <View className="flex-1 bg-gray-900 items-center justify-center">
-        <ActivityIndicator color="#3B82F6" size="large" />
+      <View
+        className="flex-1 items-center justify-center"
+        style={{ backgroundColor: colors.background }}
+      >
+        <ActivityIndicator color={colors.primary} size="large" />
       </View>
     );
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-900">
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+      <StatusBar
+        barStyle={effectiveTheme === "dark" ? "light-content" : "dark-content"}
+        backgroundColor={colors.background}
+      />
+
+      {/* App Header - Will show on all screens */}
+      <AppHeader showAvatar={true} showGreeting={true} profile={profile} />
+
       <ScrollView
         className="flex-1"
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor="#3B82F6" // iOS spinner color
-            colors={["#3B82F6", "#8B5CF6"]} // Android spinner colors
-            progressBackgroundColor="#1F2937" // Android background
-            title="Pull to refresh" // iOS text
-            titleColor="#9CA3AF" // iOS text color
+            tintColor={colors.primary}
+            colors={[colors.primary, colors.primaryLight]}
+            progressBackgroundColor={colors.card}
+            title="Pull to refresh"
+            titleColor={colors.textSecondary}
           />
         }
       >
-        {/* Header with Avatar and Greeting */}
-        <View className="px-6 pt-4 pb-6">
-          <View className="flex-row items-center justify-between mb-6">
-            {/* Avatar */}
-            <View className="flex-row items-center">
-              {profile?.avatar_url ? (
-                <Image
-                  source={{ uri: profile.avatar_url }}
-                  className="w-14 h-14 rounded-full mr-4"
-                />
-              ) : (
-                <View className="w-14 h-14 rounded-full bg-blue-600 items-center justify-center mr-4">
-                  <Ionicons name="person" size={28} color="white" />
-                </View>
-              )}
-
-              <View>
-                <Text className="text-gray-400 text-sm">
-                  {getGreeting()} 👋
-                </Text>
-                {profile?.first_name ? (
-                  <Text className="text-white text-xl font-bold mt-1">
-                    {profile.first_name}
-                  </Text>
-                ) : (
-                  <Text className="text-white text-xl font-bold mt-1">
-                    Welcome
-                  </Text>
-                )}
-              </View>
-            </View>
-
-            {/* Notification Icon */}
-            <TouchableOpacity className="w-10 h-10 bg-gray-800 rounded-full items-center justify-center">
-              <Ionicons name="notifications-outline" size={22} color="white" />
-            </TouchableOpacity>
-          </View>
-
-          {/* Profile Completion Panel */}
+        {/* Profile Completion Panel */}
+        <View className="px-6">
           {profileCompletion < 100 && (
             <TouchableOpacity
               onPress={() => router.push("/profile")}
-              className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-4 mb-4"
+              className="rounded-2xl p-4 mb-4"
+              style={{ backgroundColor: colors.primary }}
               activeOpacity={0.8}
             >
               <View className="flex-row items-center justify-between mb-3">
@@ -191,14 +159,13 @@ export default function Dashboard() {
                   <Text className="text-white font-bold text-base mb-1">
                     Complete Your Profile
                   </Text>
-                  <Text className="text-blue-100 text-sm">
+                  <Text className="text-white/80 text-sm">
                     {profileCompletion}% completed
                   </Text>
                 </View>
                 <Ionicons name="chevron-forward" size={20} color="white" />
               </View>
 
-              {/* Progress Bar */}
               <View className="bg-white/20 h-2 rounded-full overflow-hidden">
                 <View
                   className="bg-white h-full rounded-full"
@@ -212,46 +179,73 @@ export default function Dashboard() {
         {/* Quick Stats */}
         <View className="px-6 mb-6">
           <View className="flex-row justify-between">
-            <View className="bg-blue-600 rounded-2xl p-4 flex-1 mr-2">
+            <View
+              className="rounded-2xl p-4 flex-1 mr-2"
+              style={{ backgroundColor: colors.primary }}
+            >
               <Ionicons name="document-text" size={28} color="white" />
               <Text className="text-white font-bold text-2xl mt-2">24</Text>
-              <Text className="text-blue-200 text-sm">Invoices</Text>
+              <Text className="text-white/80 text-sm">Invoices</Text>
             </View>
 
-            <View className="bg-green-600 rounded-2xl p-4 flex-1 ml-2">
+            <View
+              className="rounded-2xl p-4 flex-1 ml-2"
+              style={{ backgroundColor: colors.success }}
+            >
               <Ionicons name="receipt" size={28} color="white" />
               <Text className="text-white font-bold text-2xl mt-2">18</Text>
-              <Text className="text-green-200 text-sm">Receipts</Text>
+              <Text className="text-white/80 text-sm">Receipts</Text>
             </View>
           </View>
         </View>
 
         {/* Business Info Card */}
         <View className="px-6 mb-6">
-          <Text className="text-white text-lg font-bold mb-3">
+          <Text
+            className="text-lg font-bold mb-3"
+            style={{ color: colors.text }}
+          >
             Business Overview
           </Text>
-          <View className="bg-gray-800 rounded-2xl p-4">
+          <View
+            className="rounded-2xl p-4"
+            style={{ backgroundColor: colors.card }}
+          >
             <View className="flex-row items-center mb-3">
-              <Ionicons name="business" size={20} color="#9CA3AF" />
-              <Text className="text-gray-400 ml-2 flex-1">Business Name</Text>
-              <Text className="text-white font-semibold">
+              <Ionicons name="business" size={20} color={colors.textTertiary} />
+              <Text
+                className="ml-2 flex-1"
+                style={{ color: colors.textSecondary }}
+              >
+                Business Name
+              </Text>
+              <Text className="font-semibold" style={{ color: colors.text }}>
                 {profile?.business_name || "Not set"}
               </Text>
             </View>
 
             <View className="flex-row items-center mb-3">
-              <Ionicons name="mail" size={20} color="#9CA3AF" />
-              <Text className="text-gray-400 ml-2 flex-1">Email</Text>
-              <Text className="text-white font-semibold">
+              <Ionicons name="mail" size={20} color={colors.textTertiary} />
+              <Text
+                className="ml-2 flex-1"
+                style={{ color: colors.textSecondary }}
+              >
+                Email
+              </Text>
+              <Text className="font-semibold" style={{ color: colors.text }}>
                 {profile?.business_email || userEmail}
               </Text>
             </View>
 
             <View className="flex-row items-center">
-              <Ionicons name="call" size={20} color="#9CA3AF" />
-              <Text className="text-gray-400 ml-2 flex-1">Phone</Text>
-              <Text className="text-white font-semibold">
+              <Ionicons name="call" size={20} color={colors.textTertiary} />
+              <Text
+                className="ml-2 flex-1"
+                style={{ color: colors.textSecondary }}
+              >
+                Phone
+              </Text>
+              <Text className="font-semibold" style={{ color: colors.text }}>
                 {profile?.business_phone || "Not set"}
               </Text>
             </View>
@@ -260,65 +254,101 @@ export default function Dashboard() {
 
         {/* Quick Actions */}
         <View className="px-6 mb-6">
-          <Text className="text-white text-lg font-bold mb-3">
+          <Text
+            className="text-lg font-bold mb-3"
+            style={{ color: colors.text }}
+          >
             Quick Actions
           </Text>
 
           <TouchableOpacity
             onPress={() => router.push("/(tabs)/invoices")}
-            className="bg-gray-800 rounded-2xl p-4 flex-row items-center mb-3"
+            className="rounded-2xl p-4 flex-row items-center mb-3"
+            style={{ backgroundColor: colors.card }}
             activeOpacity={0.8}
           >
-            <View className="bg-blue-600 rounded-full p-3 mr-4">
+            <View
+              className="rounded-full p-3 mr-4"
+              style={{ backgroundColor: colors.primary }}
+            >
               <Ionicons name="add-circle" size={24} color="white" />
             </View>
             <View className="flex-1">
-              <Text className="text-white font-bold text-base">
+              <Text
+                className="font-bold text-base"
+                style={{ color: colors.text }}
+              >
                 Create Invoice
               </Text>
-              <Text className="text-gray-400 text-sm">
+              <Text className="text-sm" style={{ color: colors.textSecondary }}>
                 Generate a new invoice
               </Text>
             </View>
-            <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
+            <Ionicons
+              name="chevron-forward"
+              size={20}
+              color={colors.textTertiary}
+            />
           </TouchableOpacity>
 
           <TouchableOpacity
             onPress={() => router.push("/(tabs)/invoices")}
-            className="bg-gray-800 rounded-2xl p-4 flex-row items-center mb-3"
+            className="rounded-2xl p-4 flex-row items-center mb-3"
+            style={{ backgroundColor: colors.card }}
             activeOpacity={0.8}
           >
-            <View className="bg-green-600 rounded-full p-3 mr-4">
+            <View
+              className="rounded-full p-3 mr-4"
+              style={{ backgroundColor: colors.success }}
+            >
               <Ionicons name="add-circle" size={24} color="white" />
             </View>
             <View className="flex-1">
-              <Text className="text-white font-bold text-base">
+              <Text
+                className="font-bold text-base"
+                style={{ color: colors.text }}
+              >
                 Create Receipt
               </Text>
-              <Text className="text-gray-400 text-sm">
+              <Text className="text-sm" style={{ color: colors.textSecondary }}>
                 Generate a new receipt
               </Text>
             </View>
-            <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
+            <Ionicons
+              name="chevron-forward"
+              size={20}
+              color={colors.textTertiary}
+            />
           </TouchableOpacity>
 
           <TouchableOpacity
             onPress={() => router.push("/profile")}
-            className="bg-gray-800 rounded-2xl p-4 flex-row items-center"
+            className="rounded-2xl p-4 flex-row items-center"
+            style={{ backgroundColor: colors.card }}
             activeOpacity={0.8}
           >
-            <View className="bg-purple-600 rounded-full p-3 mr-4">
+            <View
+              className="rounded-full p-3 mr-4"
+              style={{ backgroundColor: colors.primaryLight }}
+            >
               <Ionicons name="person" size={24} color="white" />
             </View>
             <View className="flex-1">
-              <Text className="text-white font-bold text-base">
+              <Text
+                className="font-bold text-base"
+                style={{ color: colors.text }}
+              >
                 Edit Profile
               </Text>
-              <Text className="text-gray-400 text-sm">
+              <Text className="text-sm" style={{ color: colors.textSecondary }}>
                 Update business details
               </Text>
             </View>
-            <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
+            <Ionicons
+              name="chevron-forward"
+              size={20}
+              color={colors.textTertiary}
+            />
           </TouchableOpacity>
         </View>
 
@@ -326,10 +356,14 @@ export default function Dashboard() {
         <View className="px-6 pb-6">
           <TouchableOpacity
             onPress={handleSignOut}
-            className="border border-red-500 rounded-2xl p-4"
+            className="border rounded-2xl p-4"
+            style={{ borderColor: colors.error }}
             activeOpacity={0.8}
           >
-            <Text className="text-red-500 text-center font-bold text-base">
+            <Text
+              className="text-center font-bold text-base"
+              style={{ color: colors.error }}
+            >
               Sign Out
             </Text>
           </TouchableOpacity>
