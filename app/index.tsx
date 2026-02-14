@@ -1,15 +1,34 @@
-import { Text, View, TouchableOpacity, StatusBar } from "react-native";
+import {
+  Text,
+  View,
+  TouchableOpacity,
+  StatusBar,
+  Linking as RNLinking,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import SplashScreen from "./splashscreen";
+import * as Linking from "expo-linking";
+import { supabase } from "../lib/supabse";
+import { useRouter } from "expo-router";
+import Toast from "react-native-toast-message";
 
 export default function Index() {
   const [showSplash, setShowSplash] = useState(true);
+  const router = useRouter();
 
   const handleGoogleSignIn = () => console.log("Google Sign In");
-  const handleEmailSignIn = () => console.log("Email Sign In");
-  const handleSignUp = () => console.log("Sign Up");
+  const handleEmailSignIn = () => {
+    router.push("/signin");
+  };
+
+  const handleSignUp = () => {
+    router.push("/signup");
+  };
+
+ 
+
 
   // Show splash screen first
   if (showSplash) {
@@ -17,6 +36,7 @@ export default function Index() {
   }
 
   return (
+    
     <SafeAreaView className="flex-1 bg-gray-900">
       <StatusBar barStyle="light-content" backgroundColor="#30371fff" />
 
