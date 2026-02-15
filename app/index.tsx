@@ -1,63 +1,19 @@
-import {
-  Text,
-  View,
-  TouchableOpacity,
-  StatusBar,
-  Linking as RNLinking,
-} from "react-native";
+import { Text, View, TouchableOpacity, StatusBar } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useState, useEffect } from "react";
-import SplashScreen from "./splashscreen";
-import * as Linking from "expo-linking";
-import { supabase } from "../lib/supabse";
 import { useRouter } from "expo-router";
-import Toast from "react-native-toast-message";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useTheme } from "@/context/ThemeContext";
-
-const SPLASH_SHOWN_KEY = "@splash_shown";
+import { useEffect } from "react";
+import { markUserAsReturning } from "../utils/FirstTimeUser";
 
 export default function Index() {
-  const [showSplash, setShowSplash] = useState(true);
-  const [isCheckingSplash, setIsCheckingSplash] = useState(true);
   const router = useRouter();
   const { colors, effectiveTheme } = useTheme();
 
+  
   useEffect(() => {
-    checkSplashStatus();
+    markUserAsReturning();
   }, []);
-
-  const checkSplashStatus = async () => {
-    try {
-      const hasShownSplash = await AsyncStorage.getItem(SPLASH_SHOWN_KEY);
-
-      if (hasShownSplash === "true") {
-        // Splash has been shown before, skip it
-        setShowSplash(false);
-      } else {
-        // First time, show splash
-        setShowSplash(true);
-      }
-    } catch (error) {
-      console.error("Error checking splash status:", error);
-      // If there's an error, show splash to be safe
-      setShowSplash(true);
-    } finally {
-      setIsCheckingSplash(false);
-    }
-  };
-
-  const handleSplashFinish = async () => {
-    try {
-      // Mark splash as shown
-      await AsyncStorage.setItem(SPLASH_SHOWN_KEY, "true");
-      setShowSplash(false);
-    } catch (error) {
-      console.error("Error saving splash status:", error);
-      setShowSplash(false);
-    }
-  };
 
   const handleGoogleSignIn = () => console.log("Google Sign In");
 
@@ -68,16 +24,6 @@ export default function Index() {
   const handleSignUp = () => {
     router.push("/auth/signup");
   };
-
-  // Show nothing while checking if we should show splash
-  if (isCheckingSplash) {
-    return null; // or a simple loading indicator
-  }
-
-  // Show splash screen if needed
-  if (showSplash) {
-    return <SplashScreen onFinish={handleSplashFinish} />;
-  }
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>

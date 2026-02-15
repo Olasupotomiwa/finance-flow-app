@@ -1,7 +1,7 @@
 import { Stack, useRouter } from "expo-router";
 import "../global.css";
 import { useFonts } from "expo-font";
-import { ActivityIndicator } from "react-native";
+
 import React, { useEffect, useState } from "react";
 import Toast from "react-native-toast-message";
 import { supabase } from "../lib/supabse";
@@ -10,44 +10,51 @@ import { ProtectedRoute } from "@/components/protectedroute";
 import * as Linking from "expo-linking";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ThemeProvider } from "@/context/ThemeContext";
+import SplashScreen from "./splashscreen";
+import { SplashManager } from "../utils/globalflash";
 
 export default function RootLayout() {
   const router = useRouter();
   const [authEvent, setAuthEvent] = useState<string>("INITIAL_LOAD");
   const [hasSession, setHasSession] = useState<boolean>(false);
+  const [showSplash, setShowSplash] = useState(() =>
+    SplashManager.shouldShowSplash(),
+  ); 
 
   const [fontsLoaded] = useFonts({
     appFont: require("../assets/font/BarlowSemiCondensed-Regular.ttf"),
     appFontBold: require("../assets/font/BarlowSemiCondensed-Bold.ttf"),
   });
 
+  // 🔥 Register callback once
+  useEffect(() => {
+    SplashManager.setSplashFinished(() => {
+      setShowSplash(false);
+    });
+  }, []);
+
   // Utility function for delays
   const delay = (ms: number) =>
     new Promise((resolve) => setTimeout(resolve, ms));
 
-  // Handle deep links from email confirmation and password reset
+  // Handle deep links (your existing code)
   useEffect(() => {
     const handleUrl = async (url: string) => {
       try {
         setAuthEvent("DEEP_LINK_RECEIVED");
-
-        // Small delay to ensure app is fully initialized
         await delay(150);
 
         const parsedUrl = Linking.parse(url);
         const queryParams = parsedUrl.queryParams;
 
-        // Check if this is a password recovery link (query params)
         if (queryParams?.type === "recovery") {
           setAuthEvent("PASSWORD_RECOVERY");
-
           setTimeout(() => {
             router.replace("/auth/reset-password");
           }, 100);
           return;
         }
 
-        // Check if URL contains tokens in fragment
         if (url.includes("#")) {
           const [, fragment] = url.split("#");
 
@@ -59,40 +66,34 @@ export default function RootLayout() {
             const error = params.get("error");
             const errorDescription = params.get("error_description");
 
-            // Check for errors in the URL from Supabase
             if (error) {
               setAuthEvent(`ERROR: ${error}`);
               Toast.show({
                 type: "error",
                 text1: "Verification Failed",
                 text2: errorDescription || error,
-                position: "bottom",
+                position: "top",
               });
               return;
             }
 
-            // If type is recovery in fragment, store tokens and navigate
             if (type === "recovery" && accessToken && refreshToken) {
               setAuthEvent("PASSWORD_RECOVERY");
-
               await AsyncStorage.setItem("recovery_access_token", accessToken);
               await AsyncStorage.setItem(
                 "recovery_refresh_token",
                 refreshToken,
               );
-
               setTimeout(() => {
                 router.replace("/auth/reset-password");
               }, 100);
               return;
             }
 
-            // If type is signup or no type specified, set session (email confirmation)
             if (accessToken && refreshToken && type !== "recovery") {
               setAuthEvent("SETTING_SESSION");
 
               try {
-                // Delay before setting session to ensure Supabase client is ready
                 await delay(200);
 
                 const { data, error } = await supabase.auth.setSession({
@@ -105,15 +106,13 @@ export default function RootLayout() {
                 if (data.session) {
                   setAuthEvent("SESSION_SET_SUCCESS");
 
-                  // Show email verified toast
                   Toast.show({
                     type: "success",
                     text1: "Email Verified!",
                     text2: "Your email has been successfully confirmed 🎉",
-                    position: "bottom",
+                    position: "top",
                   });
 
-                  // Navigate to dashboard after delay
                   setTimeout(() => {
                     router.replace("/(tabs)/home");
                   }, 1500);
@@ -139,7 +138,7 @@ export default function RootLayout() {
                   type: "error",
                   text1: "Verification Failed",
                   text2: errorMessage,
-                  position: "bottom",
+                  position: "top",
                 });
 
                 setTimeout(() => {
@@ -154,24 +153,20 @@ export default function RootLayout() {
           type: "error",
           text1: "Link Processing Failed",
           text2: error.message || "Failed to process confirmation link",
-          position: "bottom",
+          position: "top",
         });
       }
     };
 
     const setupListeners = async () => {
-      // Small delay to ensure app is fully initialized
       await delay(100);
 
-      // Listen for deep links
       const subscription = Linking.addEventListener("url", (event) => {
         handleUrl(event.url);
       });
 
-      // Check initial URL
       const initialUrl = await Linking.getInitialURL();
       if (initialUrl) {
-        // Add delay before handling initial URL
         await delay(250);
         handleUrl(initialUrl);
       }
@@ -200,7 +195,6 @@ export default function RootLayout() {
       setAuthEvent(event);
       setHasSession(!!session);
 
-      // Handle password recovery event - don't auto-redirect
       if (event === "PASSWORD_RECOVERY") {
         return;
       }
@@ -210,7 +204,7 @@ export default function RootLayout() {
           type: "success",
           text1: "Welcome!",
           text2: "You have logged in successfully 👋",
-          position: "bottom",
+          position: "top",
         });
         router.replace("/(tabs)/home");
       }
@@ -225,8 +219,14 @@ export default function RootLayout() {
     };
   }, []);
 
-  if (!fontsLoaded) {
-    return <ActivityIndicator />;
+  // 🔥 Handle splash finish using global manager
+  const handleSplashFinish = () => {
+    SplashManager.finishSplash();
+  };
+
+  // 🔥 Show splash if global state says so
+  if (!fontsLoaded || showSplash) {
+    return <SplashScreen onFinish={handleSplashFinish} />;
   }
 
   return (

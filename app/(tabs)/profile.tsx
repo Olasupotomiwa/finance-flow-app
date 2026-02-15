@@ -131,7 +131,7 @@ export default function EditProfile() {
         await uploadImage(result.assets[0].uri, type);
       }
     } catch (error) {
-      console.error("Error picking image:", error);
+    //   console.error("Error picking image:", error);
       Toast.show({
         type: "error",
         text1: "Error",
