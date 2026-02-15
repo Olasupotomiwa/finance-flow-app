@@ -1,8 +1,104 @@
 // app/(tabs)/_layout.tsx
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { View, Platform } from "react-native";
+import { View, Platform, StyleSheet } from "react-native";
 import { useTheme } from "@/context/ThemeContext";
+import Animated, {
+  useAnimatedStyle,
+  withSpring,
+  withTiming,
+} from "react-native-reanimated";
+
+// Custom Tab Icon Component with Floating Animation
+function TabIcon({
+  name,
+  focused,
+  color,
+}: {
+  name: keyof typeof Ionicons.glyphMap;
+  focused: boolean;
+  color: string;
+}) {
+  const { colors } = useTheme();
+
+  // Animated styles for the floating effect
+  const animatedContainerStyle = useAnimatedStyle(() => {
+    return {
+      transform: [
+        {
+          translateY: withSpring(focused ? -30 : 0, {
+            damping: 15,
+            stiffness: 150,
+          }),
+        },
+        {
+          scale: withSpring(focused ? 1 : 0.9, {
+            damping: 15,
+            stiffness: 150,
+          }),
+        },
+      ],
+      opacity: withTiming(focused ? 1 : 0.7, { duration: 200 }),
+    };
+  });
+
+  const animatedIconContainerStyle = useAnimatedStyle(() => {
+    return {
+      transform: [
+        {
+          rotate: withSpring(focused ? "360deg" : "0deg", {
+            damping: 15,
+            stiffness: 100,
+          }),
+        },
+      ],
+    };
+  });
+
+  if (focused) {
+    return (
+      <Animated.View
+        style={[
+          animatedContainerStyle,
+          {
+            position: "absolute",
+            top: -5,
+          },
+        ]}
+      >
+        <Animated.View
+          style={[
+            animatedIconContainerStyle,
+            {
+              width: 65,
+              height: 65,
+              borderRadius: 35,
+              backgroundColor: colors.primary,
+              justifyContent: "center",
+              alignItems: "center",
+              shadowColor: colors.primary,
+              shadowOffset: {
+                width: 0,
+                height: 8,
+              },
+              shadowOpacity: 0.6,
+              shadowRadius: 12,
+              elevation: 15,
+            },
+          ]}
+        >
+          <Ionicons name={name} size={32} color="#FFFFFF" />
+        </Animated.View>
+      </Animated.View>
+    );
+  }
+
+  return (
+    <View style={{ alignItems: "center", justifyContent: "center" }}>
+      <Ionicons name={name} size={24} color={color} />
+    </View>
+  );
+}
 
 export default function TabLayout() {
   const { colors } = useTheme();
@@ -20,6 +116,9 @@ export default function TabLayout() {
           paddingBottom: Platform.OS === "ios" ? 20 : 16,
           paddingTop: 12,
           paddingHorizontal: 16,
+          position: "absolute",
+          borderTopLeftRadius: 20,
+          borderTopRightRadius: 20,
         },
         tabBarLabelStyle: {
           fontSize: 12,
@@ -49,13 +148,11 @@ export default function TabLayout() {
         options={{
           title: "Home",
           tabBarIcon: ({ color, focused }) => (
-            <View style={{ alignItems: "center", justifyContent: "center" }}>
-              <Ionicons
-                name={focused ? "home" : "home-outline"}
-                size={28}
-                color={color}
-              />
-            </View>
+            <TabIcon
+              name={focused ? "home" : "home-outline"}
+              focused={focused}
+              color={color}
+            />
           ),
         }}
       />
@@ -66,13 +163,11 @@ export default function TabLayout() {
         options={{
           title: "Invoices",
           tabBarIcon: ({ color, focused }) => (
-            <View style={{ alignItems: "center", justifyContent: "center" }}>
-              <Ionicons
-                name={focused ? "document-text" : "document-text-outline"}
-                size={28}
-                color={color}
-              />
-            </View>
+            <TabIcon
+              name={focused ? "document-text" : "document-text-outline"}
+              focused={focused}
+              color={color}
+            />
           ),
         }}
       />
@@ -83,13 +178,11 @@ export default function TabLayout() {
         options={{
           title: "Profile",
           tabBarIcon: ({ color, focused }) => (
-            <View style={{ alignItems: "center", justifyContent: "center" }}>
-              <Ionicons
-                name={focused ? "person-circle" : "person-circle-outline"}
-                size={28}
-                color={color}
-              />
-            </View>
+            <TabIcon
+              name={focused ? "person-circle" : "person-circle-outline"}
+              focused={focused}
+              color={color}
+            />
           ),
         }}
       />
@@ -100,13 +193,11 @@ export default function TabLayout() {
         options={{
           title: "Settings",
           tabBarIcon: ({ color, focused }) => (
-            <View style={{ alignItems: "center", justifyContent: "center" }}>
-              <Ionicons
-                name={focused ? "settings" : "settings-outline"}
-                size={28}
-                color={color}
-              />
-            </View>
+            <TabIcon
+              name={focused ? "settings" : "settings-outline"}
+              focused={focused}
+              color={color}
+            />
           ),
         }}
       />

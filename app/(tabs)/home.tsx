@@ -14,6 +14,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/context/ThemeContext";
 import AppHeader from "@/components/Home/header";
+import { DashboardHomeSkeleton } from "@/components/Home/skeletonloader";
 
 interface UserProfile {
   first_name: string | null;
@@ -113,7 +114,7 @@ export default function Dashboard() {
         className="flex-1 items-center justify-center"
         style={{ backgroundColor: colors.background }}
       >
-        <ActivityIndicator color={colors.primary} size="large" />
+        <DashboardHomeSkeleton />
       </View>
     );
   }

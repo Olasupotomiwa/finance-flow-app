@@ -30,7 +30,7 @@ export default function SettingsScreen() {
         barStyle={effectiveTheme === "dark" ? "light-content" : "dark-content"}
         backgroundColor={colors.background}
       />
-      <ScrollView className="flex-1 px-6">
+      <ScrollView className="flex-1 px-6 mb-20">
         {/* Header */}
         <View className="py-6">
           <Text
