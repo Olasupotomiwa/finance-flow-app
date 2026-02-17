@@ -12,6 +12,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ThemeProvider } from "@/context/ThemeContext";
 import SplashScreen from "./splashscreen";
 import { SplashManager } from "../utils/globalflash";
+import { ProfileProvider } from "@/context/profileContext";
 
 export default function RootLayout() {
   const router = useRouter();
@@ -233,15 +234,18 @@ export default function RootLayout() {
     <>
       <ThemeProvider>
         <AuthProvider>
-          <ProtectedRoute>
-            <Stack
-              screenOptions={{
-                headerShown: false,
-                gestureEnabled: false,
-              }}
-            />
-            <Toast />
-          </ProtectedRoute>
+          <ProfileProvider>
+            <ProtectedRoute>
+              <Stack
+                screenOptions={{
+                  headerShown: false,
+                  gestureEnabled: false,
+                }}
+              />
+
+              <Toast />
+            </ProtectedRoute>
+          </ProfileProvider>
         </AuthProvider>
       </ThemeProvider>
     </>

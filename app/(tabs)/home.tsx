@@ -2,121 +2,36 @@ import {
   View,
   Text,
   TouchableOpacity,
-  ActivityIndicator,
   ScrollView,
   RefreshControl,
   StatusBar,
 } from "react-native";
-import { supabase } from "../../lib/supabse";
-import { useEffect, useState } from "react";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/context/ThemeContext";
-import AppHeader from "@/components/Home/header";
+import { useAuth } from "@/context/Authcontext"; //
+import { useProfile } from "@/context/profileContext";
 import { DashboardHomeSkeleton } from "@/components/Home/skeletonloader";
-
-interface UserProfile {
-  first_name: string | null;
-  last_name: string | null;
-  business_name: string | null;
-  business_email: string | null;
-  business_phone: string | null;
-  street_address: string | null;
-  state: string | null;
-  lga: string | null;
-  bank_name: string | null;
-  account_name: string | null;
-  account_number: string | null;
-  avatar_url: string | null;
-}
+import { useState } from "react";
+import AppHeader from "@/components/Home/header";
 
 export default function Dashboard() {
-  const [userEmail, setUserEmail] = useState<string | null>(null);
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [profileCompletion, setProfileCompletion] = useState(0);
   const router = useRouter();
   const { colors, effectiveTheme } = useTheme();
-
-  // Calculate profile completion percentage
-  const calculateProfileCompletion = (profile: UserProfile | null) => {
-    if (!profile) return 0;
-
-    const fields = [
-      profile.first_name,
-      profile.last_name,
-      profile.business_name,
-      profile.business_email,
-      profile.business_phone,
-      profile.street_address,
-      profile.state,
-      profile.lga,
-      profile.bank_name,
-      profile.account_name,
-      profile.account_number,
-    ];
-
-    const filledFields = fields.filter(
-      (field) => field && field.trim() !== "",
-    ).length;
-    return Math.round((filledFields / fields.length) * 100);
-  };
-
-  // Load data function (extracted for reuse)
-  const loadData = async () => {
-    try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (user) {
-        setUserEmail(user.email ?? "User");
-
-        const { data: profileData } = await supabase
-          .from("users")
-          .select("*")
-          .eq("id", user.id)
-          .single();
-
-        if (profileData) {
-          setProfile(profileData);
-          const completion = calculateProfileCompletion(profileData);
-          setProfileCompletion(completion);
-        }
-      }
-    } catch (error) {
-      console.error("Error loading data:", error);
-    }
-  };
+  const { user } = useAuth(); // 🔥 Get user from auth context
+  const { profile, loading, profileCompletion, refreshProfile } = useProfile(); 
+  const [refreshing, setRefreshing] = useState(false);
 
   // Pull to refresh handler
   const onRefresh = async () => {
     setRefreshing(true);
-    await loadData();
+    await refreshProfile(); // 🔥 Use context refresh
     setRefreshing(false);
   };
 
-  useEffect(() => {
-    async function initialLoad() {
-      await loadData();
-      setLoading(false);
-    }
-    initialLoad();
-  }, []);
-
- 
-
   if (loading) {
-    return (
-      <View
-        className="flex-1 items-center justify-center"
-        style={{ backgroundColor: colors.background }}
-      >
-        <DashboardHomeSkeleton />
-      </View>
-    );
+    return <DashboardHomeSkeleton />; // 🔥 Remove wrapping View
   }
 
   return (
@@ -126,7 +41,7 @@ export default function Dashboard() {
         backgroundColor={colors.background}
       />
 
-      {/* App Header - Will show on all screens */}
+      {/* App Header */}
       <AppHeader showAvatar={true} showGreeting={true} profile={profile} />
 
       <ScrollView
@@ -231,7 +146,8 @@ export default function Dashboard() {
                 Email
               </Text>
               <Text className="font-semibold" style={{ color: colors.text }}>
-                {profile?.business_email || userEmail}
+                {/* 🔥 Use profile email or fallback to auth user email */}
+                {profile?.business_email || user?.email || "Not set"}
               </Text>
             </View>
 
@@ -349,8 +265,6 @@ export default function Dashboard() {
             />
           </TouchableOpacity>
         </View>
-
-       
       </ScrollView>
     </SafeAreaView>
   );
