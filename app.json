@@ -7,17 +7,15 @@
     "icon": "./assets/images/icon.png",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
-     "splash": {
+    "splash": {
       "image": "./assets/images/splash2.jpg",
       "resizeMode": "contain",
       "backgroundColor": "#1F2937"
     },
-    
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true
     },
-    
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
@@ -26,7 +24,8 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.anonymous.myapp"
     },
     "web": {
       "output": "single",

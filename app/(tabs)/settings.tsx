@@ -1,4 +1,3 @@
-// app/(tabs)/settings.tsx
 import {
   View,
   Text,
@@ -10,19 +9,25 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
-import ThemeSelector from "@/components/ThemeSelector";
 import { useTheme } from "@/context/ThemeContext";
-import { supabase } from "@/lib/supabse";
 import { useRouter } from "expo-router";
+import AppHeader from "@/components/Home/header";
+import ThemeSelector from "@/components/ThemeSelector";
+import ChangePasswordModal from "@/components/Settings/ChangePasswordModal";
+import SignOutModal from "@/components/Settings/SignOutModal";
+import DeleteAccountModal from "@/components/Settings/DeleteAccountModal";
+import SettingItem from "@/components/Settings/SettingItem";
+import ProfileNavItem from "@/components/Settings/ProfileNavItem";
 
 export default function SettingsScreen() {
   const [notifications, setNotifications] = useState(true);
   const { colors, effectiveTheme } = useTheme();
- const router = useRouter();
-   const handleSignOut = async () => {
-     await supabase.auth.signOut();
-     router.replace("/auth/signin");
-   };
+  const router = useRouter();
+
+  // Modal states
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [showSignOutModal, setShowSignOutModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
@@ -30,30 +35,52 @@ export default function SettingsScreen() {
         barStyle={effectiveTheme === "dark" ? "light-content" : "dark-content"}
         backgroundColor={colors.background}
       />
-      <ScrollView className="flex-1 px-6 mb-20">
-        {/* Header */}
-        <View className="py-6">
-          <Text
-            className="text-3xl font-appFontBold"
-            style={{ color: colors.text }}
-          >
-            Settings
-          </Text>
-        </View>
 
-        {/* Appearance Section */}
+      <AppHeader showAvatar={false} showGreeting={false} title="Settings" />
+
+      <ScrollView className="flex-1 px-6" showsVerticalScrollIndicator={false}>
+        {/* Appearance */}
+        
+
+        {/* Configuration */}
         <View className="py-4">
           <Text
             className="text-lg font-appFontBold mb-3"
             style={{ color: colors.text }}
           >
-            Appearance
+            Configuration
           </Text>
-
-          <ThemeSelector />
+          <View
+            className="rounded-2xl overflow-hidden"
+            style={{ backgroundColor: colors.card }}
+          >
+            <ProfileNavItem
+              icon="business"
+              iconColor="#3B82F6"
+              title="Business Information"
+              subtitle="Update your business details & address"
+              onPress={() => router.push("/profile/business-info")}
+            />
+            <ProfileNavItem
+              icon="document-text"
+              iconColor="#10B981"
+              title="Invoice Template"
+              subtitle="Customize your invoice layout & design"
+              onPress={() => router.push("/profile/invoice-template")}
+              showBorder
+            />
+            <ProfileNavItem
+              icon="receipt"
+              iconColor="#F59E0B"
+              title="Receipt Configuration"
+              subtitle="Configure your receipt settings & format"
+              onPress={() => router.push("/profile/receipt-template")}
+              showBorder
+            />
+          </View>
         </View>
 
-        {/* General Settings */}
+        {/* General */}
         <View className="py-4">
           <Text
             className="text-lg font-appFontBold mb-3"
@@ -61,7 +88,6 @@ export default function SettingsScreen() {
           >
             General
           </Text>
-
           <View
             className="rounded-2xl overflow-hidden"
             style={{ backgroundColor: colors.card }}
@@ -69,6 +95,7 @@ export default function SettingsScreen() {
             <SettingItem
               icon="notifications"
               label="Notifications"
+              subtitle="Manage push notifications"
               rightElement={
                 <Switch
                   value={notifications}
@@ -81,13 +108,14 @@ export default function SettingsScreen() {
             <SettingItem
               icon="language"
               label="Language"
+              subtitle="Change app language"
               value="English"
               onPress={() => {}}
             />
           </View>
         </View>
 
-        {/* Account Settings */}
+        {/* Account */}
         <View className="py-4">
           <Text
             className="text-lg font-appFontBold mb-3"
@@ -95,7 +123,6 @@ export default function SettingsScreen() {
           >
             Account
           </Text>
-
           <View
             className="rounded-2xl overflow-hidden"
             style={{ backgroundColor: colors.card }}
@@ -103,16 +130,19 @@ export default function SettingsScreen() {
             <SettingItem
               icon="lock-closed"
               label="Change Password"
-              onPress={() => {}}
+              subtitle="Update your account password"
+              onPress={() => setShowPasswordModal(true)}
             />
             <SettingItem
               icon="shield-checkmark"
               label="Privacy"
+              subtitle="Manage your privacy settings"
               onPress={() => {}}
             />
             <SettingItem
               icon="help-circle"
               label="Help & Support"
+              subtitle="Get help or contact support"
               onPress={() => {}}
             />
           </View>
@@ -126,7 +156,6 @@ export default function SettingsScreen() {
           >
             About
           </Text>
-
           <View
             className="rounded-2xl overflow-hidden"
             style={{ backgroundColor: colors.card }}
@@ -134,31 +163,81 @@ export default function SettingsScreen() {
             <SettingItem
               icon="information-circle"
               label="Version"
+              subtitle="Current app version"
               value="1.0.0"
             />
             <SettingItem
               icon="document-text"
               label="Terms & Conditions"
+              subtitle="Read our terms of service"
               onPress={() => {}}
             />
             <SettingItem
               icon="shield"
               label="Privacy Policy"
+              subtitle="Read our privacy policy"
               onPress={() => {}}
             />
           </View>
         </View>
 
-        {/* Sign Out Button */}
-        <View className="px-6 pb-6">
+        {/* Danger Zone */}
+        <View className="py-4">
+          <Text
+            className="text-lg font-appFontBold mb-3"
+            style={{ color: colors.error }}
+          >
+            Danger Zone
+          </Text>
+
+          {/* Delete Account */}
+          <View
+            className="rounded-2xl overflow-hidden mb-4"
+            style={{ backgroundColor: colors.card }}
+          >
+            <TouchableOpacity
+              onPress={() => setShowDeleteModal(true)}
+              activeOpacity={0.8}
+              className="flex-row items-center px-4 py-4"
+            >
+              <View
+                className="w-10 h-10 rounded-xl items-center justify-center mr-3"
+                style={{ backgroundColor: `${colors.error}20` }}
+              >
+                <Ionicons name="person-remove" size={20} color={colors.error} />
+              </View>
+              <View className="flex-1">
+                <Text
+                  className="text-base font-appFontBold"
+                  style={{ color: colors.error }}
+                >
+                  Delete Account
+                </Text>
+                <Text
+                  className="text-sm font-appFont mt-0.5"
+                  style={{ color: colors.textSecondary }}
+                >
+                  Permanently delete your account and all data
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={colors.error} />
+            </TouchableOpacity>
+          </View>
+
+          {/* Sign Out */}
           <TouchableOpacity
-            onPress={handleSignOut}
-            className="border rounded-2xl p-4"
-            style={{ borderColor: colors.error }}
+            onPress={() => setShowSignOutModal(true)}
+            className="rounded-2xl p-4 flex-row items-center justify-center mb-24"
+            style={{
+              backgroundColor: `${colors.error}15`,
+              borderWidth: 1.5,
+              borderColor: colors.error,
+            }}
             activeOpacity={0.8}
           >
+            <Ionicons name="log-out-outline" size={22} color={colors.error} />
             <Text
-              className="text-center font-bold text-base"
+              className="font-appFontBold text-base ml-2"
               style={{ color: colors.error }}
             >
               Sign Out
@@ -166,70 +245,20 @@ export default function SettingsScreen() {
           </TouchableOpacity>
         </View>
       </ScrollView>
+
+      {/* Modals */}
+      <ChangePasswordModal
+        visible={showPasswordModal}
+        onClose={() => setShowPasswordModal(false)}
+      />
+      <SignOutModal
+        visible={showSignOutModal}
+        onClose={() => setShowSignOutModal(false)}
+      />
+      <DeleteAccountModal
+        visible={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+      />
     </SafeAreaView>
   );
-}
-
-interface SettingItemProps {
-  icon: keyof typeof Ionicons.glyphMap;
-  label: string;
-  value?: string;
-  onPress?: () => void;
-  rightElement?: React.ReactNode;
-}
-
-function SettingItem({
-  icon,
-  label,
-  value,
-  onPress,
-  rightElement,
-}: SettingItemProps) {
-  const { colors } = useTheme();
-
-  const content = (
-    <View
-      className="flex-row items-center justify-between py-4 px-4 border-b last:border-b-0"
-      style={{ borderColor: colors.border }}
-    >
-      <View className="flex-row items-center flex-1">
-        <Ionicons name={icon} size={22} color={colors.textTertiary} />
-        <Text
-          className="font-appFont text-base ml-3"
-          style={{ color: colors.text }}
-        >
-          {label}
-        </Text>
-      </View>
-      {rightElement || (
-        <View className="flex-row items-center">
-          {value && (
-            <Text
-              className="font-appFont mr-2"
-              style={{ color: colors.textSecondary }}
-            >
-              {value}
-            </Text>
-          )}
-          {onPress && (
-            <Ionicons
-              name="chevron-forward"
-              size={20}
-              color={colors.textTertiary}
-            />
-          )}
-        </View>
-      )}
-    </View>
-  );
-
-  if (onPress) {
-    return (
-      <TouchableOpacity onPress={onPress} activeOpacity={0.8}>
-        {content}
-      </TouchableOpacity>
-    );
-  }
-
-  return content;
 }
