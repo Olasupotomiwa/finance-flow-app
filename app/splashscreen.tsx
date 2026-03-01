@@ -5,6 +5,9 @@ import Svg, { Path } from "react-native-svg";
 
 const { width, height } = Dimensions.get("window");
 
+// Responsive font size helper
+const rf = (size: number) => Math.min(size, size * (width / 390));
+
 interface SplashScreenProps {
   onFinish: () => void;
 }
@@ -15,7 +18,6 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
   const hasFinished = useRef(false);
   const animationStarted = useRef(false);
 
-  // Animation values
   const receiptScale = useRef(new Animated.Value(0.3)).current;
   const receiptOpacity = useRef(new Animated.Value(0)).current;
   const stampScale = useRef(new Animated.Value(0)).current;
@@ -31,7 +33,6 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
   const sparkle3 = useRef(new Animated.Value(0)).current;
   const fadeOut = useRef(new Animated.Value(1)).current;
 
-  // Get today's date in receipt format
   const today = new Date();
   const formattedDate = today.toLocaleDateString("en-US", {
     month: "2-digit",
@@ -40,24 +41,16 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
   });
 
   useEffect(() => {
-    // 🔥 ULTIMATE GUARD - Check global flag first
     if (globalSplashHasRun) {
       onFinish();
       return;
     }
+    if (animationStarted.current) return;
 
-    // 🔥 Check if already started
-    if (animationStarted.current) {
-      return;
-    }
-
-    // Mark as started
     animationStarted.current = true;
     globalSplashHasRun = true;
 
-    // Animation sequence
     Animated.sequence([
-      // 1. Receipt zooms in and fades in
       Animated.parallel([
         Animated.spring(receiptScale, {
           toValue: 1,
@@ -72,10 +65,8 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
         }),
       ]),
 
-      // 2. Pause
       Animated.delay(400),
 
-      // 3. Stamp slams down with rotation and ink spread
       Animated.parallel([
         Animated.spring(stampScale, {
           toValue: 1,
@@ -100,7 +91,6 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
         }),
       ]),
 
-      // 4. Date and signature appear
       Animated.delay(200),
       Animated.parallel([
         Animated.spring(dateSlide, {
@@ -121,14 +111,12 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
         }),
       ]),
 
-      // 5. Signature draws
       Animated.timing(signatureProgress, {
         toValue: 1,
         duration: 800,
         useNativeDriver: true,
       }),
 
-      // 6. Sparkles appear sequentially
       Animated.stagger(150, [
         Animated.spring(sparkle1, {
           toValue: 1,
@@ -150,10 +138,8 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
         }),
       ]),
 
-      // 7. Hold
       Animated.delay(600),
 
-      // 8. Fade out everything
       Animated.timing(fadeOut, {
         toValue: 0,
         duration: 500,
@@ -166,12 +152,10 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
       }
     });
 
-    // Cleanup function
     return () => {
-     
       globalSplashHasRun = false;
     };
-  }, []); 
+  }, []);
 
   const stampRotation = stampRotate.interpolate({
     inputRange: [0, 1],
@@ -188,50 +172,140 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
     outputRange: [0, 0.3, 0],
   });
 
+  // Inner receipt width (accounting for margins)
+  const receiptWidth = width * 0.95;
+  const innerWidth = receiptWidth - 64; // 32px padding each side
+
   return (
     <Animated.View
-      className="flex-1 items-center justify-center"
       style={{
+        flex: 1,
+        alignItems: "center",
+        justifyContent: "center",
         backgroundColor: "#0F172A",
         opacity: fadeOut,
       }}
     >
-      {/* Rest of your JSX stays the same */}
       <Animated.View
         style={{
           transform: [{ scale: receiptScale }],
           opacity: receiptOpacity,
-          width: width * 0.95,
+          width: receiptWidth,
           height: height * 0.88,
+          backgroundColor: "white",
+          borderRadius: 24,
+          overflow: "hidden",
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 8 },
+          shadowOpacity: 0.3,
+          shadowRadius: 16,
+          elevation: 16,
         }}
-        className="bg-white rounded-3xl shadow-2xl overflow-hidden"
       >
-        {/* Receipt Top Edge (Perforation) */}
-        <View className="h-6 bg-white flex-row justify-around items-center border-b-2 border-dashed border-gray-200">
-          {[...Array(20)].map((_, i) => (
-            <View key={i} className="w-2 h-6 bg-gray-100" />
+        {/* Top Perforation */}
+        <View
+          style={{
+            height: 20,
+            backgroundColor: "white",
+            flexDirection: "row",
+            justifyContent: "space-around",
+            alignItems: "center",
+            borderBottomWidth: 2,
+            borderBottomColor: "#E5E7EB",
+            borderStyle: "dashed",
+          }}
+        >
+          {[...Array(18)].map((_, i) => (
+            <View
+              key={i}
+              style={{ width: 7, height: 20, backgroundColor: "#F3F4F6" }}
+            />
           ))}
         </View>
 
-        {/* Receipt Header */}
-        <View className="items-center pt-8 pb-6 px-8">
-          <View className="w-24 h-24 bg-gradient-to-br from-blue-600 to-blue-800 rounded-3xl items-center justify-center mb-4 shadow-lg">
-            <Ionicons name="receipt-outline" size={48} color="white" />
+        {/* Header */}
+        <View
+          style={{
+            alignItems: "center",
+            paddingTop: 20,
+            paddingBottom: 16,
+            paddingHorizontal: 24,
+          }}
+        >
+          {/* Logo icon */}
+          <View
+            style={{
+              width: 72,
+              height: 72,
+              backgroundColor: "#1D4ED8",
+              borderRadius: 20,
+              alignItems: "center",
+              justifyContent: "center",
+              marginBottom: 12,
+              shadowColor: "#1D4ED8",
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.4,
+              shadowRadius: 8,
+              elevation: 8,
+            }}
+          >
+            <Ionicons name="receipt-outline" size={36} color="white" />
           </View>
-          <Text className="text-4xl font-appFontBold text-gray-900 mb-2">
+
+          {/* ✅ FIX: App name uses width-aware font size and numberOfLines */}
+          <Text
+            style={{
+              fontSize: rf(28),
+              fontFamily: "appFontBold",
+              color: "#111827",
+              marginBottom: 4,
+              textAlign: "center",
+              width: innerWidth,
+            }}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.7}
+          >
             Finance Flow
           </Text>
-          <Text className="text-base font-appFont text-gray-500">
+
+          <Text
+            style={{
+              fontSize: rf(13),
+              fontFamily: "appFont",
+              color: "#6B7280",
+              textAlign: "center",
+              width: innerWidth,
+            }}
+            numberOfLines={2}
+            adjustsFontSizeToFit
+            minimumFontScale={0.8}
+          >
             Professional Invoice & Receipt Management
           </Text>
         </View>
 
         {/* Divider */}
-        <View className="mx-8 border-t-2 border-dashed border-gray-300 my-6" />
+        <View
+          style={{
+            marginHorizontal: 28,
+            borderTopWidth: 2,
+            borderTopColor: "#D1D5DB",
+            borderStyle: "dashed",
+            marginVertical: 10,
+          }}
+        />
 
-        {/* Features Section */}
-        <View className="px-10 space-y-5">
-          <Text className="text-xl font-appFontBold text-gray-900 mb-4">
+        {/* Features */}
+        <View style={{ paddingHorizontal: 28 }}>
+          <Text
+            style={{
+              fontSize: rf(16),
+              fontFamily: "appFontBold",
+              color: "#111827",
+              marginBottom: 10,
+            }}
+          >
             What You Can Do:
           </Text>
 
@@ -263,51 +337,85 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
         </View>
 
         {/* Divider */}
-        <View className="mx-8 border-t-2 border-dashed border-gray-300 my-6" />
+        <View
+          style={{
+            marginHorizontal: 28,
+            borderTopWidth: 2,
+            borderTopColor: "#D1D5DB",
+            borderStyle: "dashed",
+            marginVertical: 10,
+          }}
+        />
 
         {/* Footer */}
-        <View className="items-center pb-8">
-          <Text className="text-sm font-appFont text-gray-400">
+        <View style={{ alignItems: "center", paddingBottom: 20 }}>
+          <Text
+            style={{ fontSize: 12, fontFamily: "appFont", color: "#9CA3AF" }}
+          >
             Initializing your workspace...
           </Text>
         </View>
 
-        {/* Receipt Bottom Edge (Perforation) */}
-        <View className="absolute bottom-0 h-6 w-full bg-white flex-row justify-around items-center border-t-2 border-dashed border-gray-200">
-          {[...Array(20)].map((_, i) => (
-            <View key={i} className="w-2 h-6 bg-gray-100" />
+        {/* Bottom Perforation */}
+        <View
+          style={{
+            position: "absolute",
+            bottom: 0,
+            height: 20,
+            width: "100%",
+            backgroundColor: "white",
+            flexDirection: "row",
+            justifyContent: "space-around",
+            alignItems: "center",
+            borderTopWidth: 2,
+            borderTopColor: "#E5E7EB",
+            borderStyle: "dashed",
+          }}
+        >
+          {[...Array(18)].map((_, i) => (
+            <View
+              key={i}
+              style={{ width: 7, height: 20, backgroundColor: "#F3F4F6" }}
+            />
           ))}
         </View>
 
-        {/* Ink Spread Effect */}
+        {/* Ink Spread */}
         <Animated.View
           style={{
             position: "absolute",
-            top: height * 0.42,
-            right: width * 0.1,
-            width: 280,
-            height: 280,
-            borderRadius: 140,
+            top: height * 0.38,
+            left: receiptWidth * 0.1,
+            width: receiptWidth * 0.6,
+            height: receiptWidth * 0.6,
+            borderRadius: receiptWidth * 0.3,
             backgroundColor: "rgba(239, 68, 68, 0.08)",
             transform: [{ scale: inkScale }],
             opacity: inkOpacity,
           }}
         />
 
-        {/* Stamp */}
+        {/* ✅ FIXED STAMP - fully contained, responsive sizing */}
         <Animated.View
           style={{
             position: "absolute",
-            top: height * 0.45,
-            right: width * 0.15,
+            top: height * 0.41,
+            // Centered by using left+right relative to receipt inner width
+            left: receiptWidth * 0.08,
+            right: receiptWidth * 0.08,
             transform: [{ scale: stampScale }, { rotate: stampRotation }],
             opacity: stampOpacity,
+            alignItems: "center",
           }}
         >
-          {/* Stamp Border with gradient effect */}
           <View
-            className="border-8 rounded-2xl p-6 items-center justify-center"
             style={{
+              borderWidth: 5,
+              borderRadius: 14,
+              paddingVertical: 12,
+              paddingHorizontal: 20,
+              alignItems: "center",
+              justifyContent: "center",
               borderColor: "#DC2626",
               backgroundColor: "rgba(220, 38, 38, 0.05)",
               shadowColor: "#DC2626",
@@ -315,27 +423,53 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
               shadowOpacity: 0.3,
               shadowRadius: 8,
               elevation: 10,
+              // ✅ Width relative to receipt so it always fits
+              width: receiptWidth * 0.7,
             }}
           >
+            {/* ✅ adjustsFontSizeToFit ensures APPROVED never clips */}
             <Text
-              className="font-appFontBold text-5xl mb-2"
               style={{
+                fontFamily: "appFontBold",
+                fontSize: rf(34),
+                marginBottom: 4,
                 color: "#DC2626",
                 letterSpacing: 3,
                 textShadowColor: "rgba(220, 38, 38, 0.3)",
                 textShadowOffset: { width: 2, height: 2 },
                 textShadowRadius: 4,
+                textAlign: "center",
               }}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.6}
             >
               APPROVED
             </Text>
 
-            {/* Checkmark */}
-            <View className="flex-row items-center mt-2">
-              <Ionicons name="checkmark-circle" size={28} color="#DC2626" />
+            {/* ✅ VERIFIED row - constrained width so it never overflows */}
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "center",
+                marginTop: 2,
+              }}
+            >
+              <Ionicons name="checkmark-circle" size={rf(20)} color="#DC2626" />
               <Text
-                className="font-appFontBold text-lg ml-2"
-                style={{ color: "#DC2626" }}
+                style={{
+                  fontFamily: "appFontBold",
+                  fontSize: rf(16),
+                  marginLeft: 5,
+                  color: "#DC2626",
+                  letterSpacing: 2,
+                  textAlign: "center",
+                  flexShrink: 1,
+                }}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.6}
               >
                 VERIFIED
               </Text>
@@ -343,93 +477,136 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
           </View>
         </Animated.View>
 
-        {/* Date and Signature Section */}
+        {/* Date and Signature */}
         <Animated.View
           style={{
             position: "absolute",
-            bottom: height * 0.12,
+            bottom: height * 0.1,
             left: 0,
             right: 0,
-            paddingHorizontal: 40,
+            paddingHorizontal: 28,
             transform: [{ translateY: dateSlide }],
             opacity: dateOpacity,
           }}
         >
-          <View className="flex-row justify-between items-end">
-            {/* Date Field */}
-            <View className="flex-1 mr-6">
-              <Text className="text-xs font-appFont text-gray-500 mb-2 uppercase tracking-wide">
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "flex-end",
+            }}
+          >
+            <View style={{ flex: 1, marginRight: 16 }}>
+              <Text
+                style={{
+                  fontSize: 10,
+                  fontFamily: "appFont",
+                  color: "#6B7280",
+                  marginBottom: 4,
+                  textTransform: "uppercase",
+                  letterSpacing: 1,
+                }}
+              >
                 Date
               </Text>
-              <Text className="text-xl font-appFontBold text-gray-900 mb-1">
+              <Text
+                style={{
+                  fontSize: rf(16),
+                  fontFamily: "appFontBold",
+                  color: "#111827",
+                  marginBottom: 4,
+                }}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+              >
                 {formattedDate}
               </Text>
-              <View className="h-0.5 bg-gray-900" />
+              <View style={{ height: 1, backgroundColor: "#111827" }} />
             </View>
 
-            {/* Signature Field */}
-            <View className="flex-1">
-              <Text className="text-xs font-appFont text-gray-500 mb-2 uppercase tracking-wide">
+            <View style={{ flex: 1 }}>
+              <Text
+                style={{
+                  fontSize: 10,
+                  fontFamily: "appFont",
+                  color: "#6B7280",
+                  marginBottom: 4,
+                  textTransform: "uppercase",
+                  letterSpacing: 1,
+                }}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.7}
+              >
                 Authorized Signature
               </Text>
               <AnimatedSignature
                 progress={signatureProgress}
                 opacity={signatureOpacity}
               />
-              <View className="h-0.5 bg-gray-900 mt-1" />
+              <View
+                style={{ height: 1, backgroundColor: "#111827", marginTop: 4 }}
+              />
             </View>
           </View>
         </Animated.View>
 
-        {/* Sparkle Effects */}
+        {/* Sparkles */}
         <Animated.View
           style={{
             position: "absolute",
-            top: height * 0.4,
-            right: width * 0.08,
+            top: height * 0.37,
+            right: receiptWidth * 0.08,
             transform: [{ scale: sparkle1 }],
             opacity: sparkle1,
           }}
         >
-          <Ionicons name="star" size={24} color="#FCD34D" />
+          <Ionicons name="star" size={22} color="#FCD34D" />
         </Animated.View>
 
         <Animated.View
           style={{
             position: "absolute",
-            top: height * 0.52,
-            right: width * 0.42,
+            top: height * 0.49,
+            left: receiptWidth * 0.35,
             transform: [{ scale: sparkle2 }],
             opacity: sparkle2,
           }}
         >
-          <Ionicons name="star" size={20} color="#FCD34D" />
+          <Ionicons name="star" size={18} color="#FCD34D" />
         </Animated.View>
 
         <Animated.View
           style={{
             position: "absolute",
-            top: height * 0.38,
-            right: width * 0.3,
+            top: height * 0.35,
+            left: receiptWidth * 0.28,
             transform: [{ scale: sparkle3 }],
             opacity: sparkle3,
           }}
         >
-          <Ionicons name="star" size={16} color="#FCD34D" />
+          <Ionicons name="star" size={14} color="#FCD34D" />
         </Animated.View>
       </Animated.View>
 
-      {/* Loading Indicator */}
-      <View className="absolute bottom-16 flex-row space-x-3">
-        {[0, 1, 2].map((index) => (
-          <LoadingDot key={index} delay={index * 200} />
+      {/* Loading dots */}
+      <View
+        style={{
+          position: "absolute",
+          bottom: 48,
+          flexDirection: "row",
+          gap: 10,
+        }}
+      >
+        {[0, 1, 2].map((i) => (
+          <LoadingDot key={i} delay={i * 200} />
         ))}
       </View>
     </Animated.View>
   );
 }
 
-// Animated Signature Component
+// Animated Signature
 function AnimatedSignature({
   progress,
   opacity,
@@ -445,8 +622,8 @@ function AnimatedSignature({
   });
 
   return (
-    <Animated.View style={{ opacity, height: 40 }}>
-      <Svg height="40" width="140" viewBox="0 0 140 40">
+    <Animated.View style={{ opacity, height: 36 }}>
+      <Svg height="36" width="130" viewBox="0 0 140 40">
         <AnimatedPath
           d="M 10 30 Q 20 10, 35 25 T 60 20 Q 70 15, 80 25 Q 90 35, 100 20 Q 110 10, 125 28"
           stroke="#1F2937"
@@ -471,7 +648,7 @@ function AnimatedSignature({
   );
 }
 
-// Feature item component
+// Feature Item
 function FeatureItem({
   icon,
   title,
@@ -482,24 +659,45 @@ function FeatureItem({
   description: string;
 }) {
   return (
-    <View className="flex-row items-start">
-      <View className="w-12 h-12 bg-blue-100 rounded-xl items-center justify-center mr-4">
-        <Ionicons name={icon} size={24} color="#2563EB" />
+    <View
+      style={{ flexDirection: "row", alignItems: "center", marginBottom: 10 }}
+    >
+      <View
+        style={{
+          width: 38,
+          height: 38,
+          backgroundColor: "#DBEAFE",
+          borderRadius: 10,
+          alignItems: "center",
+          justifyContent: "center",
+          marginRight: 12,
+        }}
+      >
+        <Ionicons name={icon} size={20} color="#2563EB" />
       </View>
-      <View className="flex-1">
-        <Text className="text-base font-appFontBold text-gray-900 mb-1">
+      <View style={{ flex: 1 }}>
+        <Text
+          style={{
+            fontSize: rf(13),
+            fontFamily: "appFontBold",
+            color: "#111827",
+            marginBottom: 1,
+          }}
+        >
           {title}
         </Text>
-        <Text className="text-sm font-appFont text-gray-500">
+        <Text
+          style={{ fontSize: rf(11), fontFamily: "appFont", color: "#6B7280" }}
+        >
           {description}
         </Text>
       </View>
-      <Ionicons name="checkmark-circle" size={22} color="#10B981" />
+      <Ionicons name="checkmark-circle" size={18} color="#10B981" />
     </View>
   );
 }
 
-// Loading dots
+// Loading Dot
 function LoadingDot({ delay }: { delay: number }) {
   const animatedValue = useRef(new Animated.Value(0)).current;
 
@@ -520,7 +718,6 @@ function LoadingDot({ delay }: { delay: number }) {
       ]),
     );
     animation.start();
-
     return () => animation.stop();
   }, [delay, animatedValue]);
 
@@ -537,10 +734,13 @@ function LoadingDot({ delay }: { delay: number }) {
   return (
     <Animated.View
       style={{
+        width: 11,
+        height: 11,
+        borderRadius: 6,
+        backgroundColor: "#3B82F6",
         transform: [{ scale }],
         opacity,
       }}
-      className="w-3 h-3 bg-blue-500 rounded-full"
     />
   );
 }

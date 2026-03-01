@@ -23,15 +23,15 @@ export default function Dashboard() {
   const { profile, loading, profileCompletion, refreshProfile } = useProfile(); 
   const [refreshing, setRefreshing] = useState(false);
 
-  // Pull to refresh handler
+  
   const onRefresh = async () => {
     setRefreshing(true);
-    await refreshProfile(); // 🔥 Use context refresh
+    await refreshProfile(); 
     setRefreshing(false);
   };
 
   if (loading) {
-    return <DashboardHomeSkeleton />; // 🔥 Remove wrapping View
+    return <DashboardHomeSkeleton />; 
   }
 
   return (

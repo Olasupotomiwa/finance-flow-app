@@ -83,15 +83,15 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      // First time user trying to access auth pages (not root) - show landing page
-      if (isFirstTime && inAuthGroup) {
-        if (!hasRedirected.current || lastPath.current !== "/") {
-          hasRedirected.current = true;
-          lastPath.current = "/";
-          router.replace("/");
-        }
-        return;
-      }
+      // // First time user trying to access auth pages (not root) - show landing page
+      // if (isFirstTime && inAuthGroup) {
+      //   if (!hasRedirected.current || lastPath.current !== "/") {
+      //     hasRedirected.current = true;
+      //     lastPath.current = "/";
+      //     router.replace("/");
+      //   }
+      //   return;
+      // }
 
       // Already on auth pages - allow
       return;

@@ -22,6 +22,8 @@ import { useProfile } from "@/context/profileContext";
 import { useAuth } from "@/context/Authcontext";
 import { supabase } from "@/lib/supabse";
 import * as ImagePicker from "expo-image-picker";
+import { DashboardHomeSkeleton } from "@/components/Home/skeletonloader";
+import { ProfileSkeleton } from "@/components/profile/profileskeleton";
 
 export default function BusinessInfo() {
   const { colors, effectiveTheme } = useTheme();
@@ -182,7 +184,11 @@ export default function BusinessInfo() {
     }
   };
 
-  
+    
+   
+    if (loading) {
+      return <ProfileSkeleton />;
+    }
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>

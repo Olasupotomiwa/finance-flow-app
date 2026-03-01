@@ -3,7 +3,7 @@ import { supabase } from "@/lib/supabse";
 import { useAuth } from "./Authcontext";
 import Toast from "react-native-toast-message";
 
-interface UserProfile {
+export interface UserProfile {
   first_name: string | null;
   last_name: string | null;
   business_name: string | null;

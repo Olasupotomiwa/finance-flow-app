@@ -3,7 +3,7 @@ import "../global.css";
 import { useFonts } from "expo-font";
 
 import React, { useEffect, useState } from "react";
-import Toast from "react-native-toast-message";
+import Toast, { BaseToast, ErrorToast, InfoToast } from "react-native-toast-message";
 import { supabase } from "../lib/supabse";
 import { AuthProvider } from "@/context/Authcontext";
 import { ProtectedRoute } from "@/components/protectedroute";
@@ -23,8 +23,8 @@ export default function RootLayout() {
   ); 
 
   const [fontsLoaded] = useFonts({
-    appFont: require("../assets/font/BarlowSemiCondensed-Regular.ttf"),
-    appFontBold: require("../assets/font/BarlowSemiCondensed-Bold.ttf"),
+    appFont: require("../assets/font/BricolageGrotesque_24pt-Regular.ttf"),
+    appFontBold: require("../assets/font/BricolageGrotesque_24pt-Bold.ttf"),
   });
 
   // 🔥 Register callback once
@@ -204,7 +204,7 @@ export default function RootLayout() {
         Toast.show({
           type: "success",
           text1: "Welcome!",
-          text2: "You have logged in successfully 👋",
+          text2: "You have been logged in successfully ",
           position: "top",
         });
         router.replace("/(tabs)/home");
@@ -230,24 +230,74 @@ export default function RootLayout() {
     return <SplashScreen onFinish={handleSplashFinish} />;
   }
 
+   const toastConfig = {
+    success: (props: any) => (
+      <BaseToast
+        {...props}
+        style={{ borderLeftColor: "#10B981", borderLeftWidth: 6 }}
+        contentContainerStyle={{ paddingHorizontal: 15 }}
+        text1Style={{
+          fontSize: 17,
+          fontWeight: "600",
+          fontFamily: "appFontBold",
+        }}
+        text2Style={{
+          fontSize: 14,
+          fontFamily: "appFont",
+        }}
+      />
+    ),
+    error: (props: any) => (
+      <ErrorToast
+        {...props}
+        style={{ borderLeftColor: "#EF4444", borderLeftWidth: 6 }}
+        contentContainerStyle={{ paddingHorizontal: 15 }}
+        text1Style={{
+          fontSize: 16,
+          fontWeight: "600",
+          fontFamily: "appFontBold",
+        }}
+        text2Style={{
+          fontSize: 14,
+          fontFamily: "appFont",
+        }}
+      />
+    ),
+    info: (props: any) => (
+      <InfoToast
+        {...props}
+        style={{ borderLeftColor: "#3B82F6", borderLeftWidth: 6 }}
+        contentContainerStyle={{ paddingHorizontal: 15 }}
+        text1Style={{
+          fontSize: 16,
+          fontWeight: "600",
+          fontFamily: "appFontBold",
+        }}
+        text2Style={{
+          fontSize: 14,
+          fontFamily: "appFont",
+        }}
+      />
+    ),
+  };
+
   return (
     <>
       <ThemeProvider>
         <AuthProvider>
-          <ProfileProvider>
-            <ProtectedRoute>
+          <ProtectedRoute>
+            <ProfileProvider>
               <Stack
                 screenOptions={{
                   headerShown: false,
                   gestureEnabled: false,
                 }}
               />
-
-              <Toast />
-            </ProtectedRoute>
-          </ProfileProvider>
+            </ProfileProvider>
+          </ProtectedRoute>
         </AuthProvider>
       </ThemeProvider>
+      <Toast config={toastConfig} />
     </>
   );
 }
