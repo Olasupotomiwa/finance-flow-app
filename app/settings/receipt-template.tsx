@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { Stack, useRouter } from "expo-router";
 import { useTheme } from "@/context/ThemeContext";
 import Toast from "react-native-toast-message";
 
@@ -54,6 +54,7 @@ export default function ReceiptConfig() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+      <Stack.Screen options={{ gestureEnabled: true }} />
       <StatusBar
         barStyle={effectiveTheme === "dark" ? "light-content" : "dark-content"}
         backgroundColor={colors.background}

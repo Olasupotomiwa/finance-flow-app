@@ -159,9 +159,9 @@ export default function TabLayout() {
 
       {/* 2. Invoices Tab */}
       <Tabs.Screen
-        name="invoices"
+        name="billing"
         options={{
-          title: "Invoices",
+          title: "Billing",
           tabBarIcon: ({ color, focused }) => (
             <TabIcon
               name={focused ? "document-text" : "document-text-outline"}

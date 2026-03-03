@@ -3,63 +3,61 @@ import {
   Text,
   FlatList,
   TouchableOpacity,
-  StatusBar,
   ActivityIndicator,
   RefreshControl,
   TextInput,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { router } from "expo-router";
-import AppHeader from "@/components/Home/header";
 import { useTheme } from "@/context/ThemeContext";
 import { supabase } from "@/lib/supabse";
 
-type TabType = "invoices" | "receipts";
-
-type Invoice = {
+type Receipt = {
   id: string;
-  invoice_number: string;
+  receipt_number: string;
   client_name: string;
   total: number;
-  status: "draft" | "sent" | "paid" | "overdue" | "cancelled";
+  status: "draft" | "sent" | "paid";
   issue_date: string;
-  due_date: string;
   currency: string;
 };
 
-const STATUS_COLORS: Record<Invoice["status"], string> = {
+const STATUS_COLORS: Record<Receipt["status"], string> = {
   paid: "#05603A",
   sent: "#003195",
   draft: "#6B7280",
-  overdue: "#912018",
-  cancelled: "#4B5563",
 };
 
-export default function InvoicesScreen() {
-  const [activeTab, setActiveTab] = useState<TabType>("invoices");
-  const [invoices, setInvoices] = useState<Invoice[]>([]);
+export default function ReceiptsList() {
+  const { colors } = useTheme();
+  const [receipts, setReceipts] = useState<Receipt[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const { colors, effectiveTheme } = useTheme();
 
-  const fetchInvoices = useCallback(async () => {
+  const fetchReceipts = useCallback(async () => {
     try {
       setError(null);
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) throw new Error("Not authenticated");
+
       const { data, error: fetchError } = await supabase
-        .from("invoices")
+        .from("receipts")
         .select(
-          "id, invoice_number, client_name, total, status, issue_date, due_date, currency",
+          "id, receipt_number, client_name, total, status, issue_date, currency",
         )
+        .eq("user_id", user.id)
         .order("created_at", { ascending: false });
 
       if (fetchError) throw fetchError;
-      setInvoices(data ?? []);
+      setReceipts(data ?? []);
     } catch (err: any) {
-      setError(err.message ?? "Failed to load invoices");
+      setError(err.message ?? "Failed to load receipts");
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -67,30 +65,25 @@ export default function InvoicesScreen() {
   }, []);
 
   useEffect(() => {
-    fetchInvoices();
-  }, [fetchInvoices]);
-
-  // Refresh list when returning from create screen
-  useEffect(() => {
-    fetchInvoices();
-  }, []);
+    fetchReceipts();
+  }, [fetchReceipts]);
 
   const onRefresh = () => {
     setRefreshing(true);
-    fetchInvoices();
+    fetchReceipts();
   };
 
-  const filteredInvoices = useMemo(() => {
-    if (!searchQuery.trim()) return invoices;
+  const filteredReceipts = useMemo(() => {
+    if (!searchQuery.trim()) return receipts;
     const q = searchQuery.toLowerCase().trim();
-    return invoices.filter(
-      (inv) =>
-        inv.invoice_number.toLowerCase().includes(q) ||
-        inv.client_name.toLowerCase().includes(q),
+    return receipts.filter(
+      (rec) =>
+        rec.receipt_number.toLowerCase().includes(q) ||
+        rec.client_name.toLowerCase().includes(q),
     );
-  }, [invoices, searchQuery]);
+  }, [receipts, searchQuery]);
 
-  const renderItem = ({ item }: { item: Invoice }) => {
+  const renderItem = ({ item }: { item: Receipt }) => {
     const statusColor = STATUS_COLORS[item.status] ?? colors.textTertiary;
     return (
       <TouchableOpacity
@@ -109,7 +102,7 @@ export default function InvoicesScreen() {
             className="font-appFontBold text-lg"
             style={{ color: colors.text }}
           >
-            {item.invoice_number}
+            {item.receipt_number}
           </Text>
           <View
             className="px-3 py-1 rounded-full"
@@ -179,7 +172,7 @@ export default function InvoicesScreen() {
             {error}
           </Text>
           <TouchableOpacity
-            onPress={fetchInvoices}
+            onPress={fetchReceipts}
             className="mt-4 px-6 py-2 rounded-xl"
             style={{ backgroundColor: colors.primary }}
           >
@@ -191,7 +184,7 @@ export default function InvoicesScreen() {
       );
     }
 
-    if (searchQuery.trim() && filteredInvoices.length === 0) {
+    if (searchQuery.trim() && filteredReceipts.length === 0) {
       return (
         <View className="items-center justify-center py-20">
           <Ionicons
@@ -209,7 +202,7 @@ export default function InvoicesScreen() {
             className="mt-1 font-appFont text-center"
             style={{ color: colors.textSecondary }}
           >
-            No invoice matches "{searchQuery}"
+            No receipt matches "{searchQuery}"
           </Text>
         </View>
       );
@@ -218,7 +211,7 @@ export default function InvoicesScreen() {
     return (
       <View className="items-center justify-center py-20">
         <Ionicons
-          name="document-outline"
+          name="receipt-outline"
           size={48}
           color={colors.textTertiary}
         />
@@ -226,14 +219,13 @@ export default function InvoicesScreen() {
           className="mt-3 font-appFontBold text-lg"
           style={{ color: colors.text }}
         >
-          No {activeTab} yet
+          No receipts yet
         </Text>
         <Text
           className="mt-1 font-appFont"
           style={{ color: colors.textSecondary }}
         >
-          Tap + to create your first{" "}
-          {activeTab === "invoices" ? "invoice" : "receipt"}
+          Tap + to create your first receipt
         </Text>
       </View>
     );
@@ -241,49 +233,6 @@ export default function InvoicesScreen() {
 
   const renderHeader = () => (
     <View>
-      {/* Tab Switcher */}
-      <View className="flex-row py-4">
-        <TouchableOpacity
-          onPress={() => setActiveTab("invoices")}
-          className="flex-1 py-3 rounded-l-xl"
-          style={{
-            backgroundColor:
-              activeTab === "invoices" ? colors.primary : colors.card,
-          }}
-          activeOpacity={0.8}
-        >
-          <Text
-            className="text-center font-appFontBold"
-            style={{
-              color:
-                activeTab === "invoices" ? "#000000" : colors.textSecondary,
-            }}
-          >
-            Invoices
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          onPress={() => setActiveTab("receipts")}
-          className="flex-1 py-3 rounded-r-xl"
-          style={{
-            backgroundColor:
-              activeTab === "receipts" ? colors.primary : colors.card,
-          }}
-          activeOpacity={0.8}
-        >
-          <Text
-            className="text-center font-appFontBold"
-            style={{
-              color:
-                activeTab === "receipts" ? "#000000" : colors.textSecondary,
-            }}
-          >
-            Receipts
-          </Text>
-        </TouchableOpacity>
-      </View>
-
       {/* Search Bar */}
       <View
         className="flex-row items-center rounded-xl px-4 mb-4"
@@ -298,7 +247,7 @@ export default function InvoicesScreen() {
         <TextInput
           value={searchQuery}
           onChangeText={setSearchQuery}
-          placeholder="Search by invoice # or client name"
+          placeholder="Search by receipt # or client name"
           placeholderTextColor={colors.textTertiary}
           style={{
             flex: 1,
@@ -330,24 +279,17 @@ export default function InvoicesScreen() {
           className="font-appFont text-sm mb-2"
           style={{ color: colors.textSecondary }}
         >
-          {filteredInvoices.length} result
-          {filteredInvoices.length !== 1 ? "s" : ""} for "{searchQuery}"
+          {filteredReceipts.length} result
+          {filteredReceipts.length !== 1 ? "s" : ""} for "{searchQuery}"
         </Text>
       )}
     </View>
   );
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
-      <StatusBar
-        barStyle={effectiveTheme === "dark" ? "light-content" : "dark-content"}
-        backgroundColor={colors.background}
-      />
-
-      <AppHeader showAvatar={false} showGreeting={false} title="Invoices" />
-
+    <View style={{ flex: 1 }}>
       <FlatList
-        data={loading ? [] : filteredInvoices}
+        data={loading ? [] : filteredReceipts}
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
         ListHeaderComponent={renderHeader}
@@ -369,16 +311,6 @@ export default function InvoicesScreen() {
           <ActivityIndicator size="large" color={colors.primary} />
         </View>
       )}
-
-      {/* FAB → navigate to create screen */}
-      <TouchableOpacity
-        onPress={() => router.push("/invoice/create")}
-        className="absolute bottom-28 right-6 rounded-full p-4 shadow-lg"
-        style={{ backgroundColor: colors.primary }}
-        activeOpacity={0.8}
-      >
-        <Ionicons name="add" size={32} color="#000000" />
-      </TouchableOpacity>
-    </SafeAreaView>
+    </View>
   );
 }

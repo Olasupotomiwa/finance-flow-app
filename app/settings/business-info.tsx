@@ -13,7 +13,7 @@ import {
   Alert,
   RefreshControl,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { Stack, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import Toast from "react-native-toast-message";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -191,7 +191,10 @@ export default function BusinessInfo() {
     }
 
   return (
+    <>
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+        <Stack.Screen options={{ gestureEnabled: true }} />
+     
       <StatusBar
         barStyle={effectiveTheme === "dark" ? "light-content" : "dark-content"}
         backgroundColor={colors.background}
@@ -435,6 +438,7 @@ export default function BusinessInfo() {
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
+    </>
   );
 }
 

@@ -12,7 +12,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
+import { router, Stack } from "expo-router";
 import { useTheme } from "@/context/ThemeContext";
 import { supabase } from "@/lib/supabse";
 import Toast from "react-native-toast-message";
@@ -307,6 +307,7 @@ export default function CreateInvoiceScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+      <Stack.Screen options={{ gestureEnabled: true }} />
       <StatusBar
         barStyle={effectiveTheme === "dark" ? "light-content" : "dark-content"}
         backgroundColor={colors.background}
@@ -936,8 +937,6 @@ export default function CreateInvoiceScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-
-    
 
       {/* Success Modal */}
       <InvoiceSuccessModal

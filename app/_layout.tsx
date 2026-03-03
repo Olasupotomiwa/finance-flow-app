@@ -229,7 +229,7 @@ export default function RootLayout() {
   if (!fontsLoaded || showSplash) {
     return <SplashScreen onFinish={handleSplashFinish} />;
   }
-
+ 
    const toastConfig = {
     success: (props: any) => (
       <BaseToast

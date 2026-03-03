@@ -59,14 +59,14 @@ export default function SettingsScreen() {
               iconColor="#3B82F6"
               title="Business Information"
               subtitle="Update your business details & address"
-              onPress={() => router.push("/profile/business-info")}
+              onPress={() => router.push("/settings/business-info")}
             />
             <ProfileNavItem
               icon="document-text"
               iconColor="#10B981"
               title="Invoice Template"
               subtitle="Customize your invoice layout & design"
-              onPress={() => router.push("/profile/invoice-template")}
+              onPress={() => router.push("/settings/invoice-template")}
               showBorder
             />
             <ProfileNavItem
@@ -74,7 +74,7 @@ export default function SettingsScreen() {
               iconColor="#F59E0B"
               title="Receipt Configuration"
               subtitle="Configure your receipt settings & format"
-              onPress={() => router.push("/profile/receipt-template")}
+              onPress={() => router.push("/settings/receipt-template")}
               showBorder
             />
           </View>
