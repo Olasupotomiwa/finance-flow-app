@@ -11,6 +11,7 @@ import {
   Platform,
   StatusBar,
   ActivityIndicator,
+  RefreshControl,
 } from "react-native";
 import { supabase } from "../../lib/supabse";
 import { useRouter } from "expo-router";
@@ -21,13 +22,14 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import AppHeader from "@/components/Home/header";
 import { useTheme } from "@/context/ThemeContext";
 import { useProfile } from "@/context/profileContext"; 
-import { useAuth } from "@/context/Authcontext"; // 🔥 Add this
-import { DashboardHomeSkeleton } from "@/components/Home/skeletonloader";
+import { useAuth } from "@/context/Authcontext"; 
+
+import { ProfileSkeleton } from "@/components/profile/profileskeleton";
 
 export default function Profile() {
   const { colors, effectiveTheme } = useTheme();
   const router = useRouter();
-  const { profile, loading, updateProfile } = useProfile(); 
+  const { profile, loading, updateProfile, refreshProfile } = useProfile(); 
   const { user } = useAuth(); 
 
   // Local form state - synced from context
@@ -42,8 +44,9 @@ export default function Profile() {
   const [saving, setSaving] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
+   const [refreshing, setRefreshing] = useState(false);
 
-  // 🔥 Sync local state from context whenever profile changes
+  //  Sync local state from context whenever profile changes
   useEffect(() => {
     if (profile) {
       setFirstName(profile.first_name || "");
@@ -196,7 +199,7 @@ export default function Profile() {
   const handleUpdate = async () => {
     setSaving(true);
 
-    // 🔥 Use context updateProfile - reflects everywhere automatically
+    //  Use context updateProfile - reflects everywhere automatically
     await updateProfile({
       first_name: firstName,
       last_name: lastName,
@@ -206,9 +209,14 @@ export default function Profile() {
     setSaving(false);
   };
 
-  // 🔥 Use skeleton instead of ActivityIndicator
+   const onRefresh = async () => {
+     setRefreshing(true);
+     await refreshProfile();
+     setRefreshing(false);
+   };
+  //  Use skeleton instead of ActivityIndicator
   if (loading) {
-    return <DashboardHomeSkeleton />;
+    return <ProfileSkeleton />;
   }
 
   return (
@@ -224,7 +232,20 @@ export default function Profile() {
       >
         <AppHeader showAvatar={false} showGreeting={false} title="Profile" />
 
-        <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+       <ScrollView
+              className="flex-1"
+              refreshControl={
+                <RefreshControl
+                  refreshing={refreshing}
+                  onRefresh={onRefresh}
+                  tintColor={colors.primary}
+                  colors={[colors.primary, colors.primaryLight]}
+                  progressBackgroundColor={colors.card}
+                  title="Pull to refresh"
+                  titleColor={colors.textSecondary}
+                />
+              }
+            >
           <View className="p-6">
             {/* Avatar Section */}
             <View

@@ -19,19 +19,19 @@ import AppHeader from "@/components/Home/header";
 export default function Dashboard() {
   const router = useRouter();
   const { colors, effectiveTheme } = useTheme();
-  const { user } = useAuth(); // 🔥 Get user from auth context
+  const { user } = useAuth();
   const { profile, loading, profileCompletion, refreshProfile } = useProfile(); 
   const [refreshing, setRefreshing] = useState(false);
 
-  // Pull to refresh handler
+  
   const onRefresh = async () => {
     setRefreshing(true);
-    await refreshProfile(); // 🔥 Use context refresh
+    await refreshProfile(); 
     setRefreshing(false);
   };
 
   if (loading) {
-    return <DashboardHomeSkeleton />; // 🔥 Remove wrapping View
+    return <DashboardHomeSkeleton />; 
   }
 
   return (
@@ -113,9 +113,9 @@ export default function Dashboard() {
         </View>
 
         {/* Business Info Card */}
-        <View className="px-6 mb-6">
+        <View className="px-6 mb-6 ">
           <Text
-            className="text-lg font-bold mb-3"
+            className="text-lg font-bold mb-3 font-appFontBold"
             style={{ color: colors.text }}
           >
             Business Overview
@@ -127,12 +127,15 @@ export default function Dashboard() {
             <View className="flex-row items-center mb-3">
               <Ionicons name="business" size={20} color={colors.textTertiary} />
               <Text
-                className="ml-2 flex-1"
+                className="ml-2 flex-1 font-appFont"
                 style={{ color: colors.textSecondary }}
               >
                 Business Name
               </Text>
-              <Text className="font-semibold" style={{ color: colors.text }}>
+              <Text
+                className="font-semibold font-appFont"
+                style={{ color: colors.text }}
+              >
                 {profile?.business_name || "Not set"}
               </Text>
             </View>
@@ -140,12 +143,15 @@ export default function Dashboard() {
             <View className="flex-row items-center mb-3">
               <Ionicons name="mail" size={20} color={colors.textTertiary} />
               <Text
-                className="ml-2 flex-1"
+                className="ml-2 flex-1 font-appFont"
                 style={{ color: colors.textSecondary }}
               >
                 Email
               </Text>
-              <Text className="font-semibold" style={{ color: colors.text }}>
+              <Text
+                className="font-semibold font-appFont"
+                style={{ color: colors.text }}
+              >
                 {/* 🔥 Use profile email or fallback to auth user email */}
                 {profile?.business_email || user?.email || "Not set"}
               </Text>
@@ -154,12 +160,15 @@ export default function Dashboard() {
             <View className="flex-row items-center">
               <Ionicons name="call" size={20} color={colors.textTertiary} />
               <Text
-                className="ml-2 flex-1"
+                className="ml-2 flex-1 font-appFont"
                 style={{ color: colors.textSecondary }}
               >
                 Phone
               </Text>
-              <Text className="font-semibold" style={{ color: colors.text }}>
+              <Text
+                className="font-semibold font-appFont"
+                style={{ color: colors.text }}
+              >
                 {profile?.business_phone || "Not set"}
               </Text>
             </View>
@@ -169,14 +178,14 @@ export default function Dashboard() {
         {/* Quick Actions */}
         <View className="px-6 mb-6">
           <Text
-            className="text-lg font-bold mb-3"
+            className="text-lg font-bold mb-3 font-appFontBold"
             style={{ color: colors.text }}
           >
             Quick Actions
           </Text>
 
           <TouchableOpacity
-            onPress={() => router.push("/(tabs)/invoices")}
+            onPress={() => router.push("/(tabs)/billing")}
             className="rounded-2xl p-4 flex-row items-center mb-3"
             style={{ backgroundColor: colors.card }}
             activeOpacity={0.8}
@@ -189,12 +198,15 @@ export default function Dashboard() {
             </View>
             <View className="flex-1">
               <Text
-                className="font-bold text-base"
+                className="font-bold text-base font-appFontBold"
                 style={{ color: colors.text }}
               >
                 Create Invoice
               </Text>
-              <Text className="text-sm" style={{ color: colors.textSecondary }}>
+              <Text
+                className="text-sm font-appFont"
+                style={{ color: colors.textSecondary }}
+              >
                 Generate a new invoice
               </Text>
             </View>
@@ -206,7 +218,7 @@ export default function Dashboard() {
           </TouchableOpacity>
 
           <TouchableOpacity
-            onPress={() => router.push("/(tabs)/invoices")}
+            onPress={() => router.push("/(tabs)/billing")}
             className="rounded-2xl p-4 flex-row items-center mb-3"
             style={{ backgroundColor: colors.card }}
             activeOpacity={0.8}

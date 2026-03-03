@@ -377,7 +377,7 @@ export default function SignUp() {
 
           {/* Login Link */}
           <TouchableOpacity
-            onPress={() => router.push("/")}
+            onPress={() => router.push("/auth/signin")}
             className="mt-6 py-3"
           >
             <Text
