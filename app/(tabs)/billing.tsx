@@ -43,7 +43,7 @@ export default function BillingScreen() {
       return;
     }
     router.push(
-      activeTab === "invoices" ? "/invoice/create" : "/invoice/create",
+      activeTab === "invoices" ? "/invoice/create" : "/receipt/create",
     );
   };
 

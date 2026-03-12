@@ -16,17 +16,16 @@ import { supabase } from "@/lib/supabse";
 type Receipt = {
   id: string;
   receipt_number: string;
-  client_name: string;
+  customer_name: string;
   total: number;
-  status: "draft" | "sent" | "paid";
-  issue_date: string;
+  status: "completed" | "cancelled";
   currency: string;
+  created_at: string;
 };
 
 const STATUS_COLORS: Record<Receipt["status"], string> = {
-  paid: "#05603A",
-  sent: "#003195",
-  draft: "#6B7280",
+  completed: "#05603A",
+  cancelled: "#DC2626",
 };
 
 export default function ReceiptsList() {
@@ -49,7 +48,7 @@ export default function ReceiptsList() {
       const { data, error: fetchError } = await supabase
         .from("receipts")
         .select(
-          "id, receipt_number, client_name, total, status, issue_date, currency",
+          "id, receipt_number, customer_name, total, status, currency, created_at",
         )
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
@@ -79,7 +78,7 @@ export default function ReceiptsList() {
     return receipts.filter(
       (rec) =>
         rec.receipt_number.toLowerCase().includes(q) ||
-        rec.client_name.toLowerCase().includes(q),
+        rec.customer_name.toLowerCase().includes(q),
     );
   }, [receipts, searchQuery]);
 
@@ -92,7 +91,7 @@ export default function ReceiptsList() {
         activeOpacity={0.8}
         onPress={() =>
           router.push({
-            pathname: "/invoice/[id]",
+            pathname: "/receipt/[id]",
             params: { id: item.id },
           })
         }
@@ -123,7 +122,7 @@ export default function ReceiptsList() {
               className="font-appFont text-sm"
               style={{ color: colors.textSecondary }}
             >
-              {item.client_name}
+              {item.customer_name}
             </Text>
             <Text
               className="font-appFontBold text-xl mt-1"
@@ -137,7 +136,7 @@ export default function ReceiptsList() {
               className="font-appFont text-sm"
               style={{ color: colors.textTertiary }}
             >
-              {new Date(item.issue_date).toLocaleDateString("en-GB", {
+              {new Date(item.created_at).toLocaleDateString("en-GB", {
                 day: "numeric",
                 month: "short",
                 year: "numeric",
@@ -247,7 +246,7 @@ export default function ReceiptsList() {
         <TextInput
           value={searchQuery}
           onChangeText={setSearchQuery}
-          placeholder="Search by receipt # or client name"
+          placeholder="Search by receipt # or customer name"
           placeholderTextColor={colors.textTertiary}
           style={{
             flex: 1,
