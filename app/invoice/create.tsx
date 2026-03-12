@@ -288,7 +288,7 @@ export default function CreateInvoiceScreen() {
         ? "$"
         : config?.currency === "GBP"
           ? "£"
-          : "€";
+          : "₦";
 
   if (loading) {
     return (
