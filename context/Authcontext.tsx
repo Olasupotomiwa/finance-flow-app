@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, useRef } from "react";
-import { supabase } from "../lib/supabse";
+import { supabase } from "../lib/supabase";
 import { Session, User } from "@supabase/supabase-js";
 
 interface AuthContextType {

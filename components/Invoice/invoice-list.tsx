@@ -10,7 +10,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { router } from "expo-router";
 import { useTheme } from "@/context/ThemeContext";
-import { supabase } from "@/lib/supabse";
+import { supabase } from "@/lib/supabase";
 import DebouncedSearch from "@/components/DebounceSearch";
 
 type Invoice = {
@@ -86,7 +86,6 @@ export default function InvoicesList() {
   }, [invoices, searchTerm]);
 
   const renderItem = ({ item }: { item: Invoice }) => {
-    const statusColor = STATUS_COLORS[item.status] ?? colors.textTertiary;
     return (
       <TouchableOpacity
         className="rounded-2xl p-4 mb-3"
@@ -103,17 +102,6 @@ export default function InvoicesList() {
           >
             {item.invoice_number}
           </Text>
-          <View
-            className="px-3 py-1 rounded-full"
-            style={{ backgroundColor: `${statusColor}20` }}
-          >
-            <Text
-              className="font-appFontBold text-xs capitalize"
-              style={{ color: statusColor }}
-            >
-              {item.status}
-            </Text>
-          </View>
         </View>
         <View className="flex-row justify-between items-center">
           <View>

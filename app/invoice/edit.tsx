@@ -12,12 +12,11 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { router, Stack } from "expo-router";
+import { router, Stack, useLocalSearchParams } from "expo-router";
 import { useTheme } from "@/context/ThemeContext";
 import { supabase } from "@/lib/supabase";
 import Toast from "react-native-toast-message";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import InvoiceSuccessModal from "@/components/Invoice/InvoiceSuccessModal";
 import {
   SectionHeader,
   InputField,
@@ -38,13 +37,11 @@ interface InvoiceConfig {
   defaultTaxRate: string;
   enableDiscount: boolean;
   defaultDiscountType: string;
-  defaultPaymentTerms: string;
   currency: string;
-  showFooterMessage: boolean;
-  footerMessage: string;
 }
 
-export default function CreateInvoiceScreen() {
+export default function EditInvoiceScreen() {
+  const { id } = useLocalSearchParams<{ id: string }>();
   const { colors, effectiveTheme } = useTheme();
 
   // Invoice Details
@@ -78,48 +75,85 @@ export default function CreateInvoiceScreen() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [createdInvoiceId, setCreatedInvoiceId] = useState<string | null>(null);
-  const [createdInvoiceNumber, setCreatedInvoiceNumber] = useState("");
-  const [createdClientName, setCreatedClientName] = useState("");
+  const [invoiceNumber, setInvoiceNumber] = useState("");
+  const [status, setStatus] = useState("");
 
   useEffect(() => {
-    loadConfiguration();
-  }, []);
+    if (id) loadInvoice();
+  }, [id]);
 
   useEffect(() => {
     calculateTotals();
   }, [items, discountValue, discountType, taxRate, config]);
 
-  const loadConfiguration = async () => {
+  const loadInvoice = async () => {
     try {
+      setLoading(true);
+
       const {
         data: { user },
       } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) throw new Error("Not authenticated");
       setUserId(user.id);
 
-      const { data } = await supabase
+      // Load config
+      const { data: cfgData } = await supabase
         .from("user_settings")
         .select("invoice_config")
         .eq("user_id", user.id)
         .maybeSingle();
 
-      if (data?.invoice_config) {
-        setConfig(data.invoice_config);
-        setTaxRate(data.invoice_config.defaultTaxRate || "7.5");
-        setDiscountType(
-          data.invoice_config.defaultDiscountType || "percentage",
+      if (cfgData?.invoice_config) {
+        setConfig(cfgData.invoice_config);
+        setTaxRate(cfgData.invoice_config.defaultTaxRate || "7.5");
+        setDiscountType(cfgData.invoice_config.defaultDiscountType || "percentage");
+      }
+
+      // Load invoice
+      const { data: inv, error: invError } = await supabase
+        .from("invoices")
+        .select("*")
+        .eq("id", id)
+        .single();
+
+      if (invError) throw invError;
+
+      // Populate fields
+      setClientName(inv.client_name || "");
+      setClientEmail(inv.client_email || "");
+      setClientPhone(inv.client_phone || "");
+      setInvoiceNumber(inv.invoice_number || "");
+      setStatus(inv.status || "");
+      setNotes(inv.notes || "");
+      setDiscountValue(String(inv.discount_value || 0));
+      setTaxRate(String(inv.tax_rate || 7.5));
+
+      if (inv.issue_date) setIssueDate(new Date(inv.issue_date));
+      if (inv.due_date) setDueDate(new Date(inv.due_date));
+
+      // Load items
+      const { data: invItems, error: itemsError } = await supabase
+        .from("invoice_items")
+        .select("*")
+        .eq("invoice_id", id);
+
+      if (itemsError) throw itemsError;
+
+      if (invItems && invItems.length > 0) {
+        setItems(
+          invItems.map((item: any) => ({
+            id: item.id || Date.now().toString(),
+            description: item.description || "",
+            quantity: String(item.quantity || 1),
+            unitPrice: String(item.unit_price || 0),
+            amount: item.amount || 0,
+          })),
         );
-        const terms = parseInt(data.invoice_config.defaultPaymentTerms || "30");
-        const newDueDate = new Date();
-        newDueDate.setDate(newDueDate.getDate() + terms);
-        setDueDate(newDueDate);
       }
     } catch (error: any) {
       Toast.show({
         type: "error",
-        text1: "Failed to load settings",
+        text1: "Failed to load invoice",
         text2: error.message,
         position: "top",
       });
@@ -163,18 +197,18 @@ export default function CreateInvoiceScreen() {
     ]);
   };
 
-  const handleRemoveItem = (id: string) => {
-    if (items.length > 1) setItems(items.filter((item) => item.id !== id));
+  const handleRemoveItem = (itemId: string) => {
+    if (items.length > 1) setItems(items.filter((item) => item.id !== itemId));
   };
 
   const handleItemChange = (
-    id: string,
+    itemId: string,
     field: keyof InvoiceItem,
     value: string,
   ) => {
     setItems(
       items.map((item) => {
-        if (item.id !== id) return item;
+        if (item.id !== itemId) return item;
         const updated = { ...item, [field]: value };
         if (field === "quantity" || field === "unitPrice") {
           updated.amount =
@@ -186,23 +220,11 @@ export default function CreateInvoiceScreen() {
     );
   };
 
-  const generateInvoiceNumber = () => {
-    const today = new Date();
-    const y = today.getFullYear();
-    const m = String(today.getMonth() + 1).padStart(2, "0");
-    const d = String(today.getDate()).padStart(2, "0");
-    const rand = Math.floor(Math.random() * 9999)
-      .toString()
-      .padStart(4, "0");
-    return `INV-${y}${m}${d}-${rand}`;
-  };
-
   const handleSave = async () => {
     if (!clientName.trim()) {
       Toast.show({
         type: "error",
         text1: "Client name required",
-        text2: "Please enter a client name",
         position: "top",
       });
       return;
@@ -223,43 +245,39 @@ export default function CreateInvoiceScreen() {
 
     setSaving(true);
     try {
-      if (!userId) throw new Error("User not authenticated");
-
-      const invoiceNumber = generateInvoiceNumber();
-
-      const { data: invoice, error: invoiceError } = await supabase
+      // Update invoice
+      const { error: updateError } = await supabase
         .from("invoices")
-        .insert([
-          {
-            user_id: userId,
-            invoice_number: invoiceNumber,
-            client_name: clientName,
-            client_email: clientEmail || null,
-            client_phone: clientPhone || null,
-            issue_date: issueDate.toISOString().split("T")[0],
-            due_date: dueDate.toISOString().split("T")[0],
-            status: "draft",
-            subtotal,
-            discount_type: config?.enableDiscount ? discountType : null,
-            discount_value: config?.enableDiscount
-              ? parseFloat(discountValue)
-              : 0,
-            discount_amount: discountAmount,
-            tax_rate: config?.enableTax ? parseFloat(taxRate) : 0,
-            tax_amount: taxAmount,
-            total,
-            notes: notes || null,
-            currency: config?.currency || "NGN",
-          },
-        ])
-        .select()
-        .single();
+        .update({
+          client_name: clientName,
+          client_email: clientEmail || null,
+          client_phone: clientPhone || null,
+          issue_date: issueDate.toISOString().split("T")[0],
+          due_date: dueDate.toISOString().split("T")[0],
+          subtotal,
+          discount_type: config?.enableDiscount ? discountType : null,
+          discount_value: config?.enableDiscount ? parseFloat(discountValue) : 0,
+          discount_amount: discountAmount,
+          tax_rate: config?.enableTax ? parseFloat(taxRate) : 0,
+          tax_amount: taxAmount,
+          total,
+          notes: notes || null,
+        })
+        .eq("id", id);
 
-      if (invoiceError) throw invoiceError;
+      if (updateError) throw updateError;
 
-      const { error: itemsError } = await supabase.from("invoice_items").insert(
+      // Delete old items and insert new ones
+      const { error: deleteError } = await supabase
+        .from("invoice_items")
+        .delete()
+        .eq("invoice_id", id);
+
+      if (deleteError) throw deleteError;
+
+      const { error: insertError } = await supabase.from("invoice_items").insert(
         validItems.map((item) => ({
-          invoice_id: invoice.id,
+          invoice_id: id,
           description: item.description,
           quantity: parseFloat(item.quantity),
           unit_price: parseFloat(item.unitPrice),
@@ -267,18 +285,19 @@ export default function CreateInvoiceScreen() {
         })),
       );
 
-      if (itemsError) throw itemsError;
+      if (insertError) throw insertError;
 
-      // Show success modal
-      setCreatedInvoiceId(invoice.id);
-      setCreatedInvoiceNumber(invoiceNumber);
-      setCreatedClientName(clientName);
-      setShowSuccessModal(true);
+      Toast.show({
+        type: "success",
+        text1: "Invoice updated!",
+        text2: invoiceNumber,
+        position: "top",
+      });
+      setTimeout(() => router.back(), 1500);
     } catch (error: any) {
-      console.error("Error creating invoice:", error);
       Toast.show({
         type: "error",
-        text1: "Failed to create invoice",
+        text1: "Failed to update invoice",
         text2: error.message,
         position: "top",
       });
@@ -312,7 +331,7 @@ export default function CreateInvoiceScreen() {
         backgroundColor={colors.background}
       />
 
-      {/* ── Header ── */}
+      {/* Header */}
       <View
         style={{
           flexDirection: "row",
@@ -344,7 +363,7 @@ export default function CreateInvoiceScreen() {
               color: colors.text,
             }}
           >
-            Create Invoice
+            Edit Invoice
           </Text>
           <Text
             style={{
@@ -353,7 +372,26 @@ export default function CreateInvoiceScreen() {
               color: colors.textSecondary,
             }}
           >
-            Fill in the details below
+            {invoiceNumber}
+          </Text>
+        </View>
+        <View
+          style={{
+            paddingHorizontal: 10,
+            paddingVertical: 4,
+            borderRadius: 12,
+            backgroundColor: status === "draft" ? "#6B728020" : "#05603A20",
+          }}
+        >
+          <Text
+            style={{
+              fontFamily: "appFontBold",
+              fontSize: 11,
+              color: status === "draft" ? "#6B7280" : "#05603A",
+              textTransform: "uppercase",
+            }}
+          >
+            {status}
           </Text>
         </View>
       </View>
@@ -367,7 +405,7 @@ export default function CreateInvoiceScreen() {
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={{ padding: 20 }}
         >
-          {/* ── Client Information ── */}
+          {/* Client Information */}
           <SectionHeader
             icon="person"
             title="Client Information"
@@ -407,7 +445,7 @@ export default function CreateInvoiceScreen() {
             />
           </View>
 
-          {/* ── Invoice Dates ── */}
+          {/* Invoice Dates */}
           <SectionHeader
             icon="calendar"
             title="Invoice Dates"
@@ -525,7 +563,7 @@ export default function CreateInvoiceScreen() {
             )}
           </View>
 
-          {/* ── Invoice Items ── */}
+          {/* Invoice Items */}
           <View
             style={{
               flexDirection: "row",
@@ -660,7 +698,7 @@ export default function CreateInvoiceScreen() {
             </View>
           ))}
 
-          {/* ── Pricing Summary ── */}
+          {/* Pricing Summary */}
           <View
             style={{
               backgroundColor: colors.card,
@@ -836,7 +874,7 @@ export default function CreateInvoiceScreen() {
             </View>
           </View>
 
-          {/* ── Notes ── */}
+          {/* Notes */}
           <SectionHeader
             icon="document-text"
             title="Notes (Optional)"
@@ -872,7 +910,7 @@ export default function CreateInvoiceScreen() {
             />
           </View>
 
-          {/* ── Action Buttons ── */}
+          {/* Action Buttons */}
           <View style={{ flexDirection: "row", gap: 12, marginBottom: 32 }}>
             <TouchableOpacity
               onPress={() => router.back()}
@@ -928,7 +966,7 @@ export default function CreateInvoiceScreen() {
                       color: colors.background,
                     }}
                   >
-                    Create Invoice
+                    Save Changes
                   </Text>
                 </>
               )}
@@ -936,26 +974,6 @@ export default function CreateInvoiceScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-
-      {/* Success Modal */}
-      <InvoiceSuccessModal
-        visible={showSuccessModal}
-        invoiceNumber={createdInvoiceNumber}
-        clientName={createdClientName}
-        onClose={() => {
-          setShowSuccessModal(false);
-          router.back();
-        }}
-        onPreview={() => {
-          setShowSuccessModal(false);
-          router.push({
-            pathname: "/invoice/[id]",
-            params: { id: createdInvoiceId! },
-          });
-        }}
-      />
     </SafeAreaView>
   );
 }
-
-

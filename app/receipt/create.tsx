@@ -17,9 +17,16 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { router, Stack } from "expo-router";
 import { useTheme } from "@/context/ThemeContext";
-import { supabase } from "@/lib/supabse";
+import { supabase } from "@/lib/supabase";
 import Toast from "react-native-toast-message";
 import Svg, { Path } from "react-native-svg";
+import {
+  SectionHeader,
+  InputField,
+  PricingRow,
+  Divider,
+} from "@/components/shared/FormComponents";
+import { getCurrencySymbol } from "@/components/shared/currency";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -218,8 +225,8 @@ function SignaturePad({
                   bottom: 0,
                   alignItems: "center",
                   justifyContent: "center",
+                  pointerEvents: "none",
                 }}
-                pointerEvents="none"
               >
                 <Ionicons
                   name="pencil-outline"
@@ -341,6 +348,11 @@ export default function CreateReceiptScreen() {
   const [discountAmount, setDiscountAmount] = useState(0);
   const [taxAmount, setTaxAmount] = useState(0);
   const [total, setTotal] = useState(0);
+
+  // Payment method
+  const [paymentMethod, setPaymentMethod] = useState("");
+  const [showPaymentDropdown, setShowPaymentDropdown] = useState(false);
+  const paymentMethods = ["Cash", "Card", "Bank Transfer", "USSD", "Mobile Money", "Cheque", "Other"];
 
   // Signature — store the actual paths so we can upload them
   const [showSignaturePad, setShowSignaturePad] = useState(false);
@@ -573,6 +585,7 @@ export default function CreateReceiptScreen() {
             tax_amount: taxAmount,
             total,
             currency: config?.currency || "NGN",
+            payment_method: paymentMethod || null,
             has_signature: signatureUrl !== null,
             signature_url: signatureUrl,
             status: "completed",
@@ -615,16 +628,7 @@ export default function CreateReceiptScreen() {
     }
   };
 
-  // ── Currency symbol ────────────────────────────────────────────────────────
-
-  const currencySymbol =
-    config?.currency === "USD"
-      ? "$"
-      : config?.currency === "GBP"
-        ? "£"
-        : config?.currency === "EUR"
-          ? "€"
-          : "₦";
+  const currencySymbol = getCurrencySymbol(config?.currency || "NGN");
 
   // ── Loading ────────────────────────────────────────────────────────────────
 
@@ -736,8 +740,95 @@ export default function CreateReceiptScreen() {
               onChangeText={setCustomerPhone}
               keyboardType="phone-pad"
               colors={colors}
-              isLast
             />
+
+            {/* Payment Method Dropdown */}
+            <View style={{ marginBottom: 12 }}>
+              <Text
+                style={{
+                  fontSize: 13,
+                  fontFamily: "appFont",
+                  color: colors.textSecondary,
+                  marginBottom: 8,
+                }}
+              >
+                Payment Method
+              </Text>
+              <TouchableOpacity
+                onPress={() => setShowPaymentDropdown(!showPaymentDropdown)}
+                style={{
+                  backgroundColor: colors.input,
+                  borderWidth: 1,
+                  borderColor: colors.inputBorder,
+                  borderRadius: 14,
+                  padding: 14,
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                }}
+              >
+                <Text
+                  style={{
+                    fontFamily: "appFont",
+                    fontSize: 14,
+                    color: paymentMethod ? colors.text : colors.placeholder,
+                  }}
+                >
+                  {paymentMethod || "Select payment method"}
+                </Text>
+                <Ionicons
+                  name={showPaymentDropdown ? "chevron-up" : "chevron-down"}
+                  size={18}
+                  color={colors.textSecondary}
+                />
+              </TouchableOpacity>
+
+              {showPaymentDropdown && (
+                <View
+                  style={{
+                    backgroundColor: colors.card,
+                    borderWidth: 1,
+                    borderColor: colors.border,
+                    borderRadius: 14,
+                    marginTop: 6,
+                    overflow: "hidden",
+                  }}
+                >
+                  {paymentMethods.map((method) => (
+                    <TouchableOpacity
+                      key={method}
+                      onPress={() => {
+                        setPaymentMethod(method);
+                        setShowPaymentDropdown(false);
+                      }}
+                      style={{
+                        paddingVertical: 14,
+                        paddingHorizontal: 16,
+                        borderBottomWidth: 1,
+                        borderColor: colors.border,
+                        backgroundColor:
+                          paymentMethod === method
+                            ? `${colors.primary}15`
+                            : "transparent",
+                      }}
+                    >
+                      <Text
+                        style={{
+                          fontFamily: "appFont",
+                          fontSize: 14,
+                          color:
+                            paymentMethod === method
+                              ? colors.primary
+                              : colors.text,
+                        }}
+                      >
+                        {method}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+            </View>
           </View>
 
           {/* ── Issuer — only when config.showIssuer ── */}
@@ -1236,152 +1327,4 @@ export default function CreateReceiptScreen() {
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Helper Components
-// ─────────────────────────────────────────────────────────────────────────────
 
-function SectionHeader({
-  icon,
-  title,
-  colors,
-}: {
-  icon: keyof typeof Ionicons.glyphMap;
-  title: string;
-  colors: any;
-}) {
-  return (
-    <View
-      style={{
-        flexDirection: "row",
-        alignItems: "center",
-        marginBottom: 10,
-      }}
-    >
-      <View
-        style={{
-          width: 32,
-          height: 32,
-          borderRadius: 10,
-          backgroundColor: `${colors.primary}20`,
-          alignItems: "center",
-          justifyContent: "center",
-          marginRight: 8,
-        }}
-      >
-        <Ionicons name={icon} size={17} color={colors.primary} />
-      </View>
-      <Text
-        style={{
-          fontSize: 15,
-          fontFamily: "appFontBold",
-          color: colors.text,
-        }}
-      >
-        {title}
-      </Text>
-    </View>
-  );
-}
-
-function InputField({
-  label,
-  placeholder,
-  value,
-  onChangeText,
-  keyboardType,
-  colors,
-  isLast = false,
-}: {
-  label: string;
-  placeholder: string;
-  value: string;
-  onChangeText: (text: string) => void;
-  keyboardType?: any;
-  colors: any;
-  isLast?: boolean;
-}) {
-  return (
-    <View style={{ marginBottom: isLast ? 0 : 16 }}>
-      <Text
-        style={{
-          fontSize: 13,
-          fontFamily: "appFont",
-          color: colors.textSecondary,
-          marginBottom: 8,
-        }}
-      >
-        {label}
-      </Text>
-      <TextInput
-        placeholder={placeholder}
-        placeholderTextColor={colors.placeholder}
-        value={value}
-        onChangeText={onChangeText}
-        keyboardType={keyboardType}
-        style={{
-          backgroundColor: colors.input,
-          color: colors.text,
-          borderColor: colors.inputBorder,
-          borderWidth: 1,
-          borderRadius: 12,
-          padding: 14,
-          fontFamily: "appFont",
-          fontSize: 14,
-        }}
-      />
-    </View>
-  );
-}
-
-function PricingRow({
-  label,
-  value,
-  currencySymbol,
-  colors,
-  valueColor,
-}: {
-  label: string;
-  value: number;
-  currencySymbol: string;
-  colors: any;
-  valueColor?: string;
-}) {
-  return (
-    <View
-      style={{
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "space-between",
-        paddingVertical: 6,
-      }}
-    >
-      <Text style={{ fontFamily: "appFont", color: colors.textSecondary }}>
-        {label}
-      </Text>
-      <Text
-        style={{
-          fontFamily: "appFontBold",
-          fontSize: 14,
-          color: valueColor || colors.text,
-        }}
-      >
-        {currencySymbol}
-        {Math.abs(value).toLocaleString(undefined, {
-          minimumFractionDigits: 2,
-        })}
-      </Text>
-    </View>
-  );
-}
-
-function Divider({ colors }: { colors: any }) {
-  return (
-    <View
-      style={{
-        height: 1,
-        backgroundColor: colors.border,
-        marginVertical: 12,
-      }}
-    />
-  );
-}

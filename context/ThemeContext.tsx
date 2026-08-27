@@ -54,6 +54,8 @@ const lightColors = {
   transparent: "transparent",
 };
 
+export type Colors = typeof lightColors;
+
 const darkColors = {
   // Backgrounds
   background: "#111827",

@@ -12,7 +12,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useState, useMemo } from "react";
-import { supabase } from "@/lib/supabse";
+import { supabase } from "@/lib/supabase";
 import { useTheme } from "@/context/ThemeContext";
 
 interface ChangePasswordModalProps {

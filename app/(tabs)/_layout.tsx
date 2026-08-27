@@ -76,13 +76,13 @@ function TabIcon({
               backgroundColor: colors.primary,
               justifyContent: "center",
               alignItems: "center",
-              shadowColor: colors.primary,
-              shadowOffset: {
-                width: 0,
-                height: 8,
-              },
-              shadowOpacity: 0.6,
-              shadowRadius: 12,
+              boxShadow: [{
+                offsetX: 0,
+                offsetY: 8,
+                blurRadius: 12,
+                spreadDistance: 0,
+                color: colors.primary + "99",
+              }],
               elevation: 15,
             },
           ]}

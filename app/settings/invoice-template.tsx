@@ -14,7 +14,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Stack, useRouter } from "expo-router";
 import { useTheme } from "@/context/ThemeContext";
 import Toast from "react-native-toast-message";
-import { supabase } from "@/lib/supabse";
+import { supabase } from "@/lib/supabase";
 
 export default function InvoiceTemplate() {
   const { colors, effectiveTheme } = useTheme();
