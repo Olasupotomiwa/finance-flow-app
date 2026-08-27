@@ -1,4 +1,4 @@
-# 📱 Freebuff — Smart Invoice & Receipt Generator
+# Smart Invoice & Receipt Generator
 
 A cross-platform mobile application for freelancers, small businesses, and entrepreneurs to create, manage, and share professional invoices and receipts. Built with **Expo SDK 54**, **React Native 0.81**, **Supabase**, and **NativeWind**.
 
