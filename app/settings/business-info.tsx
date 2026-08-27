@@ -20,7 +20,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useTheme } from "@/context/ThemeContext";
 import { useProfile } from "@/context/profileContext";
 import { useAuth } from "@/context/Authcontext";
-import { supabase } from "@/lib/supabse";
+import { supabase } from "@/lib/supabase";
 import * as ImagePicker from "expo-image-picker";
 import { DashboardHomeSkeleton } from "@/components/Home/skeletonloader";
 import { ProfileSkeleton } from "@/components/profile/profileskeleton";
@@ -42,9 +42,11 @@ export default function BusinessInfo() {
   const [accountName, setAccountName] = useState("");
   const [accountNumber, setAccountNumber] = useState("");
   const [businessLogoUrl, setBusinessLogoUrl] = useState<string | null>(null);
+  const [businessSignatureUrl, setBusinessSignatureUrl] = useState<string | null>(null);
 
   // UI states
   const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [uploadingSignature, setUploadingSignature] = useState(false);
   const [saving, setSaving] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -61,6 +63,7 @@ export default function BusinessInfo() {
       setAccountName(profile.account_name || "");
       setAccountNumber(profile.account_number || "");
       setBusinessLogoUrl(profile.business_logo_url);
+      setBusinessSignatureUrl(profile.business_signature_url);
     }
   }, [profile]);
 
@@ -69,6 +72,96 @@ export default function BusinessInfo() {
     setRefreshing(true);
     await refreshProfile();
     setRefreshing(false);
+  };
+
+  const pickSignature = async () => {
+    try {
+      const { status } =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+      if (status !== "granted") {
+        Alert.alert(
+          "Permission Required",
+          "Please grant camera roll permissions.",
+        );
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [3, 1],
+        quality: 0.8,
+      });
+
+      if (!result.canceled) {
+        await uploadSignature(result.assets[0].uri);
+      }
+    } catch (error) {
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: "Failed to pick image",
+        position: "top",
+      });
+    }
+  };
+
+  const uploadSignature = async (uri: string) => {
+    if (!user) return;
+
+    try {
+      setUploadingSignature(true);
+
+      const fileExt = uri.split(".").pop()?.toLowerCase() || "png";
+      const fileName = `${user.id}/signature.${fileExt}`;
+
+      const response = await fetch(uri);
+      const blob = await response.blob();
+
+      const arrayBuffer = await new Promise<ArrayBuffer>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as ArrayBuffer);
+        reader.onerror = reject;
+        reader.readAsArrayBuffer(blob);
+      });
+
+      const { error: uploadError } = await supabase.storage
+        .from("business-logos")
+        .upload(fileName, arrayBuffer, {
+          contentType: `image/${fileExt}`,
+          upsert: true,
+        });
+
+      if (uploadError) throw uploadError;
+
+      const timestamp = new Date().getTime();
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from("business-logos").getPublicUrl(fileName);
+
+      const urlWithCache = `${publicUrl}?t=${timestamp}`;
+
+      const success = await updateProfile({ business_signature_url: urlWithCache });
+
+      if (success) {
+        setBusinessSignatureUrl(urlWithCache);
+        Toast.show({
+          type: "success",
+          text1: "Signature uploaded!",
+          position: "top",
+        });
+      }
+    } catch (error: any) {
+      Toast.show({
+        type: "error",
+        text1: "Upload Failed",
+        text2: error.message,
+        position: "top",
+      });
+    } finally {
+      setUploadingSignature(false);
+    }
   };
 
   const pickLogo = async () => {
@@ -166,6 +259,7 @@ export default function BusinessInfo() {
     setSaving(true);
 
     const success = await updateProfile({
+      business_signature_url: businessSignatureUrl,
       business_name: businessName,
       business_email: businessEmail,
       business_phone: businessPhone,
@@ -309,6 +403,54 @@ export default function BusinessInfo() {
                   )}
                 </TouchableOpacity>
               </View>
+
+              {/* Business Signature */}
+              <Text
+                className="text-base font-appFontBold mb-4 mt-6"
+                style={{ color: colors.text }}
+              >
+                Business Signature
+              </Text>
+              <View className="relative">
+                {businessSignatureUrl ? (
+                  <Image
+                    source={{ uri: businessSignatureUrl }}
+                    className="w-48 h-16 rounded-xl"
+                    style={{ backgroundColor: colors.border }}
+                    resizeMode="contain"
+                  />
+                ) : (
+                  <View
+                    className="w-48 h-16 rounded-xl items-center justify-center"
+                    style={{ backgroundColor: colors.background }}
+                  >
+                    <Ionicons
+                      name="create-outline"
+                      size={28}
+                      color={colors.textTertiary}
+                    />
+                  </View>
+                )}
+
+                <TouchableOpacity
+                  onPress={pickSignature}
+                  disabled={uploadingSignature}
+                  className="absolute bottom-0 right-0 rounded-full p-2.5"
+                  style={{ backgroundColor: colors.primary }}
+                >
+                  {uploadingSignature ? (
+                    <ActivityIndicator color="white" size="small" />
+                  ) : (
+                    <Ionicons name="camera" size={18} color="white" />
+                  )}
+                </TouchableOpacity>
+              </View>
+              <Text
+                className="text-xs font-appFont mt-2"
+                style={{ color: colors.textTertiary }}
+              >
+                Upload your signature image to appear on invoices and receipts
+              </Text>
             </View>
 
             {/* Business Details */}

@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, useRef } from "react";
-import { supabase } from "@/lib/supabse";
+import { supabase } from "@/lib/supabase";
 import { useAuth } from "./Authcontext";
 import Toast from "react-native-toast-message";
 
@@ -17,6 +17,7 @@ export interface UserProfile {
   account_number: string | null;
   avatar_url: string | null;
   business_logo_url: string | null;
+  business_signature_url: string | null;
   phone: string | null;
 }
 
@@ -48,6 +49,7 @@ const PROFILE_FIELDS: (keyof UserProfile)[] = [
   "bank_name",
   "account_name",
   "account_number",
+  "business_signature_url",
 ];
 
 export function ProfileProvider({ children }: { children: React.ReactNode }) {

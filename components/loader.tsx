@@ -267,10 +267,13 @@ export default function LoadingScreen() {
             opacity: logoOpacity,
             transform: [{ scale: logoScale }],
             marginBottom: 32,
-            shadowColor: colors.primary,
-            shadowOffset: { width: 0, height: 8 },
-            shadowOpacity: isDark ? 0.5 : 0.2,
-            shadowRadius: 20,
+            boxShadow: [{
+              offsetX: 0,
+              offsetY: 8,
+              blurRadius: 20,
+              spreadDistance: 0,
+              color: colors.primary + (isDark ? "80" : "33"),
+            }],
             elevation: 12,
           }}
         >

@@ -1,20 +1,27 @@
-import { View, Text, Animated, Dimensions } from "react-native";
+import {
+  View,
+  Text,
+  Animated,
+  useWindowDimensions,
+  Platform,
+} from "react-native";
 import { useEffect, useRef } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import Svg, { Path } from "react-native-svg";
 
-const { width, height } = Dimensions.get("window");
-
 // Responsive font size helper
-const rf = (size: number) => Math.min(size, size * (width / 390));
+const rf = (size: number, width: number) =>
+  Math.min(size, size * (width / 390));
+
+// Use native driver only on native platforms (not web)
+const NATIVE_DRIVER = Platform.OS !== "web";
 
 interface SplashScreenProps {
   onFinish: () => void;
 }
 
-let globalSplashHasRun = false;
-
 export default function SplashScreen({ onFinish }: SplashScreenProps) {
+  const { width, height } = useWindowDimensions();
   const hasFinished = useRef(false);
   const animationStarted = useRef(false);
 
@@ -41,109 +48,109 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
   });
 
   useEffect(() => {
-    if (globalSplashHasRun) {
-      onFinish();
-      return;
-    }
     if (animationStarted.current) return;
-
     animationStarted.current = true;
-    globalSplashHasRun = true;
 
     Animated.sequence([
+      // Phase 1: Receipt scale-in + fade (0-400ms)
       Animated.parallel([
         Animated.spring(receiptScale, {
           toValue: 1,
-          tension: 50,
-          friction: 7,
-          useNativeDriver: true,
+          tension: 60,
+          friction: 8,
+          useNativeDriver: NATIVE_DRIVER,
         }),
         Animated.timing(receiptOpacity, {
           toValue: 1,
-          duration: 600,
-          useNativeDriver: true,
+          duration: 400,
+          useNativeDriver: NATIVE_DRIVER,
         }),
       ]),
 
-      Animated.delay(400),
+      Animated.delay(200),
 
+      // Phase 2: Stamp slam (600-900ms)
       Animated.parallel([
         Animated.spring(stampScale, {
           toValue: 1,
           tension: 80,
           friction: 4,
-          useNativeDriver: true,
+          useNativeDriver: NATIVE_DRIVER,
         }),
         Animated.timing(stampRotate, {
           toValue: 1,
-          duration: 300,
-          useNativeDriver: true,
+          duration: 200,
+          useNativeDriver: NATIVE_DRIVER,
         }),
         Animated.timing(stampOpacity, {
           toValue: 1,
-          duration: 200,
-          useNativeDriver: true,
+          duration: 150,
+          useNativeDriver: NATIVE_DRIVER,
         }),
         Animated.timing(inkSpread, {
           toValue: 1,
-          duration: 500,
-          useNativeDriver: true,
+          duration: 350,
+          useNativeDriver: NATIVE_DRIVER,
         }),
       ]),
 
-      Animated.delay(200),
+      Animated.delay(100),
+
+      // Phase 3: Date + signature slide in (1000-1350ms)
       Animated.parallel([
         Animated.spring(dateSlide, {
           toValue: 0,
           tension: 100,
           friction: 8,
-          useNativeDriver: true,
+          useNativeDriver: NATIVE_DRIVER,
         }),
         Animated.timing(dateOpacity, {
           toValue: 1,
-          duration: 400,
-          useNativeDriver: true,
+          duration: 300,
+          useNativeDriver: NATIVE_DRIVER,
         }),
         Animated.timing(signatureOpacity, {
           toValue: 1,
-          duration: 300,
-          useNativeDriver: true,
+          duration: 200,
+          useNativeDriver: NATIVE_DRIVER,
         }),
       ]),
 
       Animated.timing(signatureProgress, {
         toValue: 1,
-        duration: 800,
-        useNativeDriver: true,
+        duration: 500,
+        useNativeDriver: NATIVE_DRIVER,
       }),
 
-      Animated.stagger(150, [
+      // Phase 4: Sparkles (1500-1700ms)
+      Animated.stagger(80, [
         Animated.spring(sparkle1, {
           toValue: 1,
           tension: 100,
           friction: 5,
-          useNativeDriver: true,
+          useNativeDriver: NATIVE_DRIVER,
         }),
         Animated.spring(sparkle2, {
           toValue: 1,
           tension: 100,
           friction: 5,
-          useNativeDriver: true,
+          useNativeDriver: NATIVE_DRIVER,
         }),
         Animated.spring(sparkle3, {
           toValue: 1,
           tension: 100,
           friction: 5,
-          useNativeDriver: true,
+          useNativeDriver: NATIVE_DRIVER,
         }),
       ]),
 
-      Animated.delay(600),
+      Animated.delay(200),
 
+      // Phase 5: Fade out (1900-2200ms)
       Animated.timing(fadeOut, {
         toValue: 0,
-        duration: 500,
-        useNativeDriver: true,
+        duration: 300,
+        useNativeDriver: NATIVE_DRIVER,
       }),
     ]).start(() => {
       if (!hasFinished.current) {
@@ -152,9 +159,6 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
       }
     });
 
-    return () => {
-      globalSplashHasRun = false;
-    };
   }, []);
 
   const stampRotation = stampRotate.interpolate({
@@ -195,10 +199,15 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
           backgroundColor: "white",
           borderRadius: 24,
           overflow: "hidden",
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: 8 },
-          shadowOpacity: 0.3,
-          shadowRadius: 16,
+          boxShadow: [
+            {
+              offsetX: 0,
+              offsetY: 8,
+              blurRadius: 16,
+              spreadDistance: 0,
+              color: "rgba(0,0,0,0.3)",
+            },
+          ],
           elevation: 16,
         }}
       >
@@ -242,20 +251,25 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
               alignItems: "center",
               justifyContent: "center",
               marginBottom: 12,
-              shadowColor: "#1D4ED8",
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.4,
-              shadowRadius: 8,
+              boxShadow: [
+                {
+                  offsetX: 0,
+                  offsetY: 4,
+                  blurRadius: 8,
+                  spreadDistance: 0,
+                  color: "rgba(29, 78, 216, 0.4)",
+                },
+              ],
               elevation: 8,
             }}
           >
             <Ionicons name="receipt-outline" size={36} color="white" />
           </View>
 
-          {/* ✅ FIX: App name uses width-aware font size and numberOfLines */}
+          {/* App name - width-aware */}
           <Text
             style={{
-              fontSize: rf(28),
+              fontSize: rf(28, width),
               fontFamily: "appFontBold",
               color: "#111827",
               marginBottom: 4,
@@ -271,7 +285,7 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
 
           <Text
             style={{
-              fontSize: rf(13),
+              fontSize: rf(13, width),
               fontFamily: "appFont",
               color: "#6B7280",
               textAlign: "center",
@@ -300,7 +314,7 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
         <View style={{ paddingHorizontal: 28 }}>
           <Text
             style={{
-              fontSize: rf(16),
+              fontSize: rf(16, width),
               fontFamily: "appFontBold",
               color: "#111827",
               marginBottom: 10,
@@ -313,26 +327,31 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
             icon="document-text"
             title="Create Invoices"
             description="Professional invoices in seconds"
+            width={width}
           />
           <FeatureItem
             icon="receipt"
             title="Generate Receipts"
             description="Quick and easy receipt creation"
+            width={width}
           />
           <FeatureItem
             icon="download"
             title="Export as PDF"
             description="Share documents instantly"
+            width={width}
           />
           <FeatureItem
             icon="people"
             title="Manage Clients"
             description="Keep track of your customers"
+            width={width}
           />
           <FeatureItem
             icon="analytics"
             title="Track Payments"
             description="Monitor your cash flow"
+            width={width}
           />
         </View>
 
@@ -395,12 +414,11 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
           }}
         />
 
-        {/* ✅ FIXED STAMP - fully contained, responsive sizing */}
+        {/* STAMP - fully contained, responsive sizing */}
         <Animated.View
           style={{
             position: "absolute",
             top: height * 0.41,
-            // Centered by using left+right relative to receipt inner width
             left: receiptWidth * 0.08,
             right: receiptWidth * 0.08,
             transform: [{ scale: stampScale }, { rotate: stampRotation }],
@@ -418,20 +436,24 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
               justifyContent: "center",
               borderColor: "#DC2626",
               backgroundColor: "rgba(220, 38, 38, 0.05)",
-              shadowColor: "#DC2626",
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.3,
-              shadowRadius: 8,
+              boxShadow: [
+                {
+                  offsetX: 0,
+                  offsetY: 4,
+                  blurRadius: 8,
+                  spreadDistance: 0,
+                  color: "rgba(220, 38, 38, 0.3)",
+                },
+              ],
               elevation: 10,
-              // ✅ Width relative to receipt so it always fits
               width: receiptWidth * 0.7,
             }}
           >
-            {/* ✅ adjustsFontSizeToFit ensures APPROVED never clips */}
+            {/* APPROVED text - adjustsFontSizeToFit ensures it never clips */}
             <Text
               style={{
                 fontFamily: "appFontBold",
-                fontSize: rf(34),
+                fontSize: rf(34, width),
                 marginBottom: 4,
                 color: "#DC2626",
                 letterSpacing: 3,
@@ -447,7 +469,7 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
               APPROVED
             </Text>
 
-            {/* ✅ VERIFIED row - constrained width so it never overflows */}
+            {/* VERIFIED row - constrained width so it never overflows */}
             <View
               style={{
                 flexDirection: "row",
@@ -456,11 +478,11 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
                 marginTop: 2,
               }}
             >
-              <Ionicons name="checkmark-circle" size={rf(20)} color="#DC2626" />
+              <Ionicons name="checkmark-circle" size={rf(20, width)} color="#DC2626" />
               <Text
                 style={{
                   fontFamily: "appFontBold",
-                  fontSize: rf(16),
+                  fontSize: rf(16, width),
                   marginLeft: 5,
                   color: "#DC2626",
                   letterSpacing: 2,
@@ -511,7 +533,7 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
               </Text>
               <Text
                 style={{
-                  fontSize: rf(16),
+                  fontSize: rf(16, width),
                   fontFamily: "appFontBold",
                   color: "#111827",
                   marginBottom: 4,
@@ -599,7 +621,7 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
         }}
       >
         {[0, 1, 2].map((i) => (
-          <LoadingDot key={i} delay={i * 200} />
+          <LoadingDot key={i} delay={i * 150} />
         ))}
       </View>
     </Animated.View>
@@ -653,10 +675,12 @@ function FeatureItem({
   icon,
   title,
   description,
+  width,
 }: {
   icon: keyof typeof Ionicons.glyphMap;
   title: string;
   description: string;
+  width: number;
 }) {
   return (
     <View
@@ -678,7 +702,7 @@ function FeatureItem({
       <View style={{ flex: 1 }}>
         <Text
           style={{
-            fontSize: rf(13),
+            fontSize: rf(13, width),
             fontFamily: "appFontBold",
             color: "#111827",
             marginBottom: 1,
@@ -687,7 +711,11 @@ function FeatureItem({
           {title}
         </Text>
         <Text
-          style={{ fontSize: rf(11), fontFamily: "appFont", color: "#6B7280" }}
+          style={{
+            fontSize: rf(11, width),
+            fontFamily: "appFont",
+            color: "#6B7280",
+          }}
         >
           {description}
         </Text>
@@ -708,12 +736,12 @@ function LoadingDot({ delay }: { delay: number }) {
           toValue: 1,
           duration: 600,
           delay,
-          useNativeDriver: true,
+          useNativeDriver: NATIVE_DRIVER,
         }),
         Animated.timing(animatedValue, {
           toValue: 0,
           duration: 600,
-          useNativeDriver: true,
+          useNativeDriver: NATIVE_DRIVER,
         }),
       ]),
     );

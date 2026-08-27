@@ -1,4 +1,4 @@
-import { supabase } from "../lib/supabse";
+import { supabase } from "../lib/supabase";
 
 export const updateBusinessProfile = async (
   firstName: string, 

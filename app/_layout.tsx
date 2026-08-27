@@ -4,14 +4,15 @@ import { useFonts } from "expo-font";
 
 import React, { useEffect, useState } from "react";
 import Toast, { BaseToast, ErrorToast, InfoToast } from "react-native-toast-message";
-import { supabase } from "../lib/supabse";
+import { supabase } from "../lib/supabase";
 import { AuthProvider } from "@/context/Authcontext";
-import { ProtectedRoute } from "@/components/protectedroute";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 import * as Linking from "expo-linking";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ThemeProvider } from "@/context/ThemeContext";
 import SplashScreen from "./splashscreen";
 import { SplashManager } from "../utils/globalflash";
+import * as ExpoSplashScreen from "expo-splash-screen";
 import { ProfileProvider } from "@/context/profileContext";
 
 export default function RootLayout() {
@@ -21,6 +22,11 @@ export default function RootLayout() {
   const [showSplash, setShowSplash] = useState(() =>
     SplashManager.shouldShowSplash(),
   ); 
+
+  // Hold the native splash screen visible while our custom splash runs
+  useEffect(() => {
+    ExpoSplashScreen.preventAutoHideAsync().catch(() => {});
+  }, []);
 
   const [fontsLoaded] = useFonts({
     appFont: require("../assets/font/BricolageGrotesque_24pt-Regular.ttf"),
@@ -223,9 +229,11 @@ export default function RootLayout() {
   // 🔥 Handle splash finish using global manager
   const handleSplashFinish = () => {
     SplashManager.finishSplash();
+    // Hide the native splash now that our custom splash animation is done
+    ExpoSplashScreen.hideAsync().catch(() => {});
   };
 
-  // 🔥 Show splash if global state says so
+  // Show splash if fonts not loaded or global state says so
   if (!fontsLoaded || showSplash) {
     return <SplashScreen onFinish={handleSplashFinish} />;
   }

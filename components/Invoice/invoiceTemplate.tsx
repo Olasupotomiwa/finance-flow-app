@@ -159,10 +159,13 @@ export default function InvoiceTemplate({
         width: A4_WIDTH,
         minHeight: A4_HEIGHT,
         backgroundColor: "#fff",
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 8,
+        boxShadow: [{
+          offsetX: 0,
+          offsetY: 2,
+          blurRadius: 8,
+          spreadDistance: 0,
+          color: "rgba(0,0,0,0.1)",
+        }],
         elevation: 5,
       }}
     >
@@ -649,6 +652,24 @@ export default function InvoiceTemplate({
             </Text>
           </View>
         </>
+      )}
+
+      {/* ══ SIGNATURE ══════════════════════════════════════════════════════════ */}
+      {profile?.business_signature_url && (
+        <View style={{ paddingHorizontal: 24, paddingTop: 16 }}>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end" }}>
+            <View>
+              <Text style={{ fontSize: 10, fontFamily: "appFontBold", color: INV.grey, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>
+                Authorized Signature
+              </Text>
+              <Image
+                source={{ uri: profile.business_signature_url }}
+                style={{ width: 160, height: 60, resizeMode: "contain" }}
+              />
+              <View style={{ height: 1, backgroundColor: INV.greyLine, width: 160, marginTop: 4 }} />
+            </View>
+          </View>
+        </View>
       )}
 
       {/* ══ FOOTER ════════════════════════════════════════════════════════════ */}

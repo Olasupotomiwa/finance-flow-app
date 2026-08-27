@@ -11,7 +11,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { router } from "expo-router";
 import { useTheme } from "@/context/ThemeContext";
-import { supabase } from "@/lib/supabse";
+import { supabase } from "@/lib/supabase";
 
 type Receipt = {
   id: string;

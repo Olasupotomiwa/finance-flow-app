@@ -9,10 +9,10 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { router, useLocalSearchParams } from "expo-router";
+import { router, Stack, useLocalSearchParams } from "expo-router";
 import { useTheme } from "@/context/ThemeContext";
 import { useProfile } from "@/context/profileContext";
-import { supabase } from "@/lib/supabse";
+import { supabase } from "@/lib/supabase";
 import ViewShot, { captureRef } from "react-native-view-shot";
 import * as Sharing from "expo-sharing";
 import * as MediaLibrary from "expo-media-library";
@@ -22,174 +22,12 @@ import Toast from "react-native-toast-message";
 import ReceiptTemplate, {
   ReceiptData,
   ReceiptItem,
-} from "@/components/Receipt/ReceiptTemplate";
-import { buildReceiptHtml } from "@/components/Receipt/buildReceiptHtml";
-
-// ── Currency helper ───────────────────────────────────────────────────────────
-const getSymbol = (c: string) =>
-  ({ NGN: "₦", USD: "$", GBP: "£", EUR: "€" })[c] ?? "₦";
+} from "@/components/receipt/ReceiptTemplate";
+import { buildReceiptHtml } from "@/components/receipt/buildHtml";
+import ShareSheet from "@/components/shared/ShareSheet";
+import { getCurrencySymbol } from "@/components/shared/currency";
 
 // ── Share bottom sheet ────────────────────────────────────────────────────────
-function ShareSheet({
-  visible,
-  onClose,
-  onImage,
-  onPDF,
-  colors,
-}: {
-  visible: boolean;
-  onClose: () => void;
-  onImage: () => void;
-  onPDF: () => void;
-  colors: any;
-}) {
-  if (!visible) return null;
-  const opts = [
-    {
-      label: "Share as Image",
-      sub: "Save or send as JPG — easy to view anywhere",
-      icon: "image-outline",
-      color: colors.primary,
-      cb: onImage,
-    },
-    {
-      label: "Share as PDF",
-      sub: "Professional format — ideal for email & printing",
-      icon: "document-text-outline",
-      color: colors.error,
-      cb: onPDF,
-    },
-  ];
-  return (
-    <View style={{ position: "absolute", inset: 0, zIndex: 50 }}>
-      <TouchableOpacity
-        style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)" }}
-        activeOpacity={1}
-        onPress={onClose}
-      />
-      <View
-        style={{
-          backgroundColor: colors.card,
-          borderTopLeftRadius: 24,
-          borderTopRightRadius: 24,
-          paddingTop: 12,
-          paddingBottom: 36,
-          paddingHorizontal: 20,
-        }}
-      >
-        <View
-          style={{
-            width: 40,
-            height: 4,
-            borderRadius: 2,
-            backgroundColor: colors.border,
-            alignSelf: "center",
-            marginBottom: 20,
-          }}
-        />
-        <Text
-          style={{
-            fontSize: 16,
-            fontFamily: "appFontBold",
-            color: colors.text,
-            marginBottom: 4,
-          }}
-        >
-          Share Receipt As
-        </Text>
-        <Text
-          style={{
-            fontSize: 13,
-            fontFamily: "appFont",
-            color: colors.textSecondary,
-            marginBottom: 20,
-          }}
-        >
-          Choose the format you'd like to share
-        </Text>
-        {opts.map((o, i) => (
-          <TouchableOpacity
-            key={i}
-            onPress={o.cb}
-            activeOpacity={0.8}
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 14,
-              padding: 16,
-              borderRadius: 14,
-              backgroundColor: colors.background,
-              borderWidth: 1,
-              borderColor: colors.border,
-              marginBottom: 10,
-            }}
-          >
-            <View
-              style={{
-                width: 44,
-                height: 44,
-                borderRadius: 12,
-                backgroundColor: `${o.color}20`,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <Ionicons name={o.icon as any} size={22} color={o.color} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text
-                style={{
-                  fontSize: 14,
-                  fontFamily: "appFontBold",
-                  color: colors.text,
-                }}
-              >
-                {o.label}
-              </Text>
-              <Text
-                style={{
-                  fontSize: 12,
-                  fontFamily: "appFont",
-                  color: colors.textSecondary,
-                  marginTop: 2,
-                }}
-              >
-                {o.sub}
-              </Text>
-            </View>
-            <Ionicons
-              name="chevron-forward"
-              size={18}
-              color={colors.textTertiary}
-            />
-          </TouchableOpacity>
-        ))}
-        <TouchableOpacity
-          onPress={onClose}
-          style={{
-            paddingVertical: 14,
-            borderRadius: 14,
-            alignItems: "center",
-            backgroundColor: colors.background,
-            borderWidth: 1,
-            borderColor: colors.border,
-          }}
-        >
-          <Text
-            style={{
-              fontSize: 14,
-              fontFamily: "appFontBold",
-              color: colors.textSecondary,
-            }}
-          >
-            Cancel
-          </Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
-}
-
 // ── Screen ────────────────────────────────────────────────────────────────────
 export default function ReceiptPreviewScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -201,6 +39,7 @@ export default function ReceiptPreviewScreen() {
   const [loading, setLoading] = useState(true);
   const [sharing, setSharing] = useState(false);
   const [showSheet, setShowSheet] = useState(false);
+  const [showDownloadSheet, setShowDownloadSheet] = useState(false);
   const paperRef = useRef<ViewShot>(null);
 
   useEffect(() => {
@@ -265,7 +104,7 @@ export default function ReceiptPreviewScreen() {
     if (!receipt) return;
     setSharing(true);
     try {
-      const sym = getSymbol(receipt.currency);
+      const sym = getCurrencySymbol(receipt.currency);
       const html = buildReceiptHtml(
         receipt,
         items,
@@ -292,8 +131,9 @@ export default function ReceiptPreviewScreen() {
     }
   };
 
-  // ── Download to gallery ───────────────────────────────────────────────────
-  const handleDownload = async () => {
+  // ── Download image to gallery ─────────────────────────────────────────────
+  const handleDownloadImage = async () => {
+    setShowDownloadSheet(false);
     if (!paperRef.current) return;
     setSharing(true);
     try {
@@ -318,6 +158,39 @@ export default function ReceiptPreviewScreen() {
         type: "error",
         text1: "Download Failed",
         text2: "Could not save receipt",
+        position: "top",
+      });
+    } finally {
+      setSharing(false);
+    }
+  };
+
+  // ── Download PDF to device (share sheet — MediaLibrary can't save PDFs) ──
+  const handleDownloadPDF = async () => {
+    setShowDownloadSheet(false);
+    if (!receipt) return;
+    setSharing(true);
+    try {
+      const sym = getCurrencySymbol(receipt.currency);
+      const html = buildReceiptHtml(
+        receipt,
+        items,
+        profile,
+        colors.primary,
+        sym,
+      );
+      const { uri } = await Print.printToFileAsync({ html, base64: false });
+      await Sharing.shareAsync(uri, {
+        mimeType: "application/pdf",
+        dialogTitle: `Receipt ${receipt.receipt_number}`,
+        UTI: "com.adobe.pdf",
+      });
+    } catch (err) {
+      console.error(err);
+      Toast.show({
+        type: "error",
+        text1: "Download Failed",
+        text2: "Could not generate PDF",
         position: "top",
       });
     } finally {
@@ -381,6 +254,7 @@ export default function ReceiptPreviewScreen() {
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+      <Stack.Screen options={{ gestureEnabled: true }} />
       <StatusBar
         barStyle={effectiveTheme === "dark" ? "light-content" : "dark-content"}
         backgroundColor={colors.background}
@@ -453,13 +327,13 @@ export default function ReceiptPreviewScreen() {
       <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1 }}>
         {/* ViewShot wraps ReceiptTemplate — captured for image/PDF */}
         <ViewShot ref={paperRef} options={{ format: "jpg", quality: 1 }}>
-          <View style={{ margin: 16 }}>
+          <View style={{ marginHorizontal: 16, marginTop: 16, marginBottom: 16, alignItems: "center" }}>
             <ReceiptTemplate
               receipt={receipt}
               items={items}
               profile={profile}
               primaryColor={colors.primary}
-              currencySymbol={getSymbol(receipt.currency)}
+              currencySymbol={getCurrencySymbol(receipt.currency)}
             />
           </View>
         </ViewShot>
@@ -497,7 +371,7 @@ export default function ReceiptPreviewScreen() {
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
-            onPress={handleDownload}
+            onPress={() => setShowDownloadSheet(true)}
             disabled={sharing}
             style={{
               flex: 1,
@@ -541,6 +415,16 @@ export default function ReceiptPreviewScreen() {
         onImage={handleShareImage}
         onPDF={handleSharePDF}
         colors={colors}
+        title="Share Receipt As"
+      />
+
+      <ShareSheet
+        visible={showDownloadSheet}
+        onClose={() => setShowDownloadSheet(false)}
+        onImage={handleDownloadImage}
+        onPDF={handleDownloadPDF}
+        colors={colors}
+        title="Download Receipt As"
       />
     </SafeAreaView>
   );

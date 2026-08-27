@@ -11,7 +11,7 @@ import { useState, useEffect } from "react";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/context/ThemeContext";
-import { supabase } from "@/lib/supabse";
+import { supabase } from "@/lib/supabase";
 import Toast from "react-native-toast-message";
 
 type ReceiptConfig = {
